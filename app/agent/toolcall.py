@@ -10,6 +10,7 @@ from app.logger import logger
 from app.prompt.toolcall import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.schema import TOOL_CHOICE_TYPE, AgentState, Message, ToolCall, ToolChoice
 from app.tool import CreateChatCompletion, Terminate, ToolCollection
+from app.skills.hooks import HookManager
 
 
 TOOL_CALL_REQUIRED = "Tool calls required but none provided"
@@ -29,6 +30,7 @@ class ToolCallAgent(ReActAgent):
     )
     tool_choices: TOOL_CHOICE_TYPE = ToolChoice.AUTO  # type: ignore
     special_tool_names: List[str] = Field(default_factory=lambda: [Terminate().name])
+    hook_manager: HookManager = Field(default_factory=HookManager)
 
     tool_calls: List[ToolCall] = Field(default_factory=list)
     _current_base64_image: Optional[str] = None
@@ -38,6 +40,19 @@ class ToolCallAgent(ReActAgent):
 
     async def think(self) -> bool:
         """Process current state and decide next actions using tools"""
+        # Try to match and apply skill for current request
+        if self.current_step == 1:
+            user_request = ""
+            for msg in reversed(self.messages):
+                if msg.role == "user" and msg.content:
+                    user_request = msg.content
+                    break
+
+            if user_request:
+                skill_applied = await self.match_and_apply_skill(user_request)
+                if skill_applied:
+                    logger.info(f"Applied skill for request: {user_request[:50]}...")
+
         if self.next_step_prompt:
             user_msg = Message.user_message(self.next_step_prompt)
             self.messages += [user_msg]
@@ -176,9 +191,23 @@ class ToolCallAgent(ReActAgent):
             # Parse arguments
             args = json.loads(command.function.arguments or "{}")
 
+            # Trigger PreToolUse hooks
+            await self.hook_manager.trigger_hooks(
+                event="PreToolUse",
+                tool_name=name,
+                context={"tool_name": name, "tool_input": args},
+            )
+
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = await self.available_tools.execute(name=name, tool_input=args)
+
+            # Trigger PostToolUse hooks
+            await self.hook_manager.trigger_hooks(
+                event="PostToolUse",
+                tool_name=name,
+                context={"tool_name": name, "tool_input": args, "result": result},
+            )
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)
