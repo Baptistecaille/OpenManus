@@ -17,7 +17,7 @@ class SkillMatcher:
         """
         self.llm = llm
 
-    def match_skill(
+    async def match_skill(
         self, request: str, available_skills: List[SkillMetadata]
     ) -> Optional[str]:
         """Find the most relevant skill for a user request.
@@ -34,10 +34,7 @@ class SkillMatcher:
 
         # Build skills list for the prompt
         skills_list = "\n".join(
-            [
-                f"- {skill.name}: {skill.description}"
-                for skill in available_skills
-            ]
+            [f"- {skill.name}: {skill.description}" for skill in available_skills]
         )
 
         # Construct matching prompt
@@ -97,7 +94,7 @@ Do not include any explanation or additional text."""
             Matched skill name or None
         """
         # Clean up response
-        skill_name = response.strip().strip('"\'').lower()
+        skill_name = response.strip().strip("\"'").lower()
 
         # Check for "none" response
         if skill_name == "none" or skill_name == "no match":

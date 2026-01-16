@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from app.llm import LLM
 from app.logger import logger
@@ -64,13 +64,9 @@ class BaseAgent(BaseModel, ABC):
         default_factory=HookManager, description="Manages skill lifecycle hooks"
     )
 
-    _original_system_prompt: Optional[str] = Field(
-        default=None, exclude=True, description="Store original system prompt"
-    )
-    _original_tools_filter: Optional[List[str]] = Field(
-        default=None, exclude=True, description="Store original tool filter"
-    )
-    _skills_enabled: bool = Field(default=True, exclude=True, description="Enable/disable skills")
+    _original_system_prompt: Optional[str] = PrivateAttr(default=None)
+    _original_tools_filter: Optional[List[str]] = PrivateAttr(default=None)
+    _skills_enabled: bool = PrivateAttr(default=True)
 
     class Config:
         arbitrary_types_allowed = True
@@ -300,9 +296,7 @@ class BaseAgent(BaseModel, ABC):
 
         # Apply tool restrictions if specified
         if skill.metadata.allowed_tools:
-            logger.info(
-                f"Skill restricts tools to: {skill.metadata.allowed_tools}"
-            )
+            logger.info(f"Skill restricts tools to: {skill.metadata.allowed_tools}")
 
         # Register hooks
         if skill.has_hooks():
