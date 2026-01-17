@@ -1,8 +1,45 @@
 const i18n = {
+    fr: {
+        welcome: {
+            title: "Que puis-je faire pour vous ?",
+            subtitle: "Je suis votre assistant IA prêt à accomplir des tâches complexes"
+        },
+        config: {
+            title: "Configuration système",
+            subtitle: "Configurez les paramètres nécessaires pour utiliser le système",
+            note: "Assurez-vous que les informations de configuration sont correctes.",
+            apiKeyNote: "Si vous n'avez pas de clé API, obtenez-en une auprès de votre fournisseur.",
+            llmConfig: "Configuration LLM",
+            serverConfig: "Configuration serveur",
+            save: "Sauvegarder",
+            cancel: "Annuler",
+            required: "*"
+        },
+        input: {
+            placeholder: "Décrivez votre tâche...",
+            button: "Créer"
+        },
+        history: {
+            title: "Tâches"
+        },
+        status: {
+            running: "Tâche en cours",
+            completed: "Tâche terminée",
+            failed: "Tâche échouée",
+            error: "Erreur"
+        },
+        buttons: {
+            configSetting: "Config"
+        },
+        sidebar: {
+            newTask: "Nouvelle tâche",
+            search: "Rechercher"
+        }
+    },
     en: {
         welcome: {
-            title: "Welcome to OpenManus Local Version",
-            subtitle: "Please enter a task prompt to start a new task"
+            title: "What can I do for you?",
+            subtitle: "I'm your AI assistant ready to accomplish complex tasks"
         },
         config: {
             title: "System Configuration",
@@ -13,14 +50,14 @@ const i18n = {
             serverConfig: "Server Configuration",
             save: "Save Configuration",
             cancel: "Cancel",
-            required: "Required"
+            required: "*"
         },
         input: {
-            placeholder: "Enter task prompt...",
-            button: "Create Task"
+            placeholder: "Describe your task...",
+            button: "Create"
         },
         history: {
-            title: "History Tasks"
+            title: "Tasks"
         },
         status: {
             running: "Task running",
@@ -29,13 +66,17 @@ const i18n = {
             error: "Error"
         },
         buttons: {
-            configSetting: "Configuration"
+            configSetting: "Config"
+        },
+        sidebar: {
+            newTask: "New task",
+            search: "Search"
         }
     },
     zh: {
         welcome: {
-            title: "欢迎使用 OpenManus 本地版",
-            subtitle: "请输入任务提示以开始新任务"
+            title: "我能为您做什么？",
+            subtitle: "我是您的AI助手，随时准备完成复杂的任务"
         },
         config: {
             title: "系统配置",
@@ -46,14 +87,14 @@ const i18n = {
             serverConfig: "服务器配置",
             save: "保存配置",
             cancel: "取消",
-            required: "必填"
+            required: "*"
         },
         input: {
-            placeholder: "输入任务提示...",
-            button: "创建任务"
+            placeholder: "描述您的任务...",
+            button: "创建"
         },
         history: {
-            title: "历史任务"
+            title: "任务"
         },
         status: {
             running: "任务运行中",
@@ -62,13 +103,17 @@ const i18n = {
             error: "错误"
         },
         buttons: {
-            configSetting: "系统配置"
+            configSetting: "配置"
+        },
+        sidebar: {
+            newTask: "新任务",
+            search: "搜索"
         }
     },
     ja: {
         welcome: {
-            title: "OpenManus ローカル版へようこそ",
-            subtitle: "タスクを開始するにはプロンプトを入力してください"
+            title: "何かお手伝いできますか？",
+            subtitle: "複雑なタスクを達成するAIアシスタントです"
         },
         config: {
             title: "システム設定",
@@ -79,14 +124,14 @@ const i18n = {
             serverConfig: "サーバー設定",
             save: "設定を保存",
             cancel: "キャンセル",
-            required: "必須"
+            required: "*"
         },
         input: {
-            placeholder: "タスクプロンプトを入力...",
-            button: "タスク作成"
+            placeholder: "タスクを説明...",
+            button: "作成"
         },
         history: {
-            title: "タスク履歴"
+            title: "タスク"
         },
         status: {
             running: "タスク実行中",
@@ -95,13 +140,17 @@ const i18n = {
             error: "エラー"
         },
         buttons: {
-            configSetting: "システム設定"
+            configSetting: "設定"
+        },
+        sidebar: {
+            newTask: "新規タスク",
+            search: "検索"
         }
     },
     ko: {
         welcome: {
-            title: "OpenManus 로컬 버전에 오신 것을 환영합니다",
-            subtitle: "새 작업을 시작하려면 프롬프트를 입력하세요"
+            title: "무엇을 도와드릴까요?",
+            subtitle: "복잡한 작업을 수행하는 AI 어시스턴트입니다"
         },
         config: {
             title: "시스템 설정",
@@ -112,14 +161,14 @@ const i18n = {
             serverConfig: "서버 설정",
             save: "설정 저장",
             cancel: "취소",
-            required: "필수"
+            required: "*"
         },
         input: {
-            placeholder: "작업 프롬프트 입력...",
-            button: "작업 생성"
+            placeholder: "작업을 설명하세요...",
+            button: "생성"
         },
         history: {
-            title: "작업 기록"
+            title: "작업"
         },
         status: {
             running: "작업 실행 중",
@@ -128,13 +177,17 @@ const i18n = {
             error: "오류"
         },
         buttons: {
-            configSetting: "시스템 설정"
+            configSetting: "설정"
+        },
+        sidebar: {
+            newTask: "새 작업",
+            search: "검색"
         }
     },
     de: {
         welcome: {
-            title: "Willkommen bei OpenManus Lokale Version",
-            subtitle: "Bitte geben Sie eine Aufgabenanweisung ein, um eine neue Aufgabe zu starten"
+            title: "Was kann ich für Sie tun?",
+            subtitle: "Ich bin Ihr KI-Assistent für komplexe Aufgaben"
         },
         config: {
             title: "Systemkonfiguration",
@@ -145,14 +198,14 @@ const i18n = {
             serverConfig: "Server Konfiguration",
             save: "Konfiguration speichern",
             cancel: "Abbrechen",
-            required: "Erforderlich"
+            required: "*"
         },
         input: {
-            placeholder: "Aufgabenanweisung eingeben...",
-            button: "Aufgabe erstellen"
+            placeholder: "Beschreiben Sie Ihre Aufgabe...",
+            button: "Erstellen"
         },
         history: {
-            title: "Aufgabenverlauf"
+            title: "Aufgaben"
         },
         status: {
             running: "Aufgabe wird ausgeführt",
@@ -161,10 +214,15 @@ const i18n = {
             error: "Fehler"
         },
         buttons: {
-            configSetting: "Systemeinstellungen"
+            configSetting: "Einstellungen"
+        },
+        sidebar: {
+            newTask: "Neue Aufgabe",
+            search: "Suchen"
         }
     }
 };
+
 
 function getCurrentLanguage() {
     return localStorage.getItem('language') || 'en';
@@ -177,34 +235,75 @@ function setLanguage(lang) {
 
 function updatePageContent(lang) {
     const texts = i18n[lang];
+    if (!texts) return;
 
-    document.querySelector('.welcome-message h1').textContent = texts.welcome.title;
-    document.querySelector('.welcome-message p').textContent = texts.welcome.subtitle;
+    // Welcome message
+    const welcomeTitle = document.querySelector('.welcome-message h1');
+    const welcomeSubtitle = document.querySelector('.welcome-message p');
+    if (welcomeTitle) welcomeTitle.textContent = texts.welcome.title;
+    if (welcomeSubtitle) welcomeSubtitle.textContent = texts.welcome.subtitle;
 
-    document.getElementById('config-button').value = texts.buttons.configSetting;
-    document.getElementById('config-button').title = texts.buttons.configSetting;
+    // Config button
+    const configBtn = document.getElementById('config-button');
+    if (configBtn) {
+        configBtn.value = texts.buttons.configSetting;
+        configBtn.title = texts.buttons.configSetting;
+    }
 
-    document.querySelector('.config-modal-header h2').textContent = texts.config.title;
-    document.querySelector('.config-modal-header p').textContent = texts.config.subtitle;
-    document.querySelector('.note-box p:first-child').textContent = texts.config.note;
-    document.querySelector('.note-box p:last-child').textContent = texts.config.apiKeyNote;
+    // Config modal
+    const configModalTitle = document.querySelector('.config-modal-header h2');
+    const configModalSubtitle = document.querySelector('.config-modal-header p');
+    if (configModalTitle) configModalTitle.textContent = texts.config.title;
+    if (configModalSubtitle) configModalSubtitle.textContent = texts.config.subtitle;
+
+    const noteBoxP1 = document.querySelector('.note-box p:first-child');
+    const noteBoxP2 = document.querySelector('.note-box p:last-child');
+    if (noteBoxP1) noteBoxP1.textContent = texts.config.note;
+    if (noteBoxP2) noteBoxP2.textContent = texts.config.apiKeyNote;
 
     document.querySelectorAll('.config-section h3').forEach(h3 => {
-        if (h3.textContent.includes('LLM')) {
+        if (h3.textContent.includes('LLM') || h3.textContent.includes('Configuration LLM')) {
             h3.textContent = texts.config.llmConfig;
-        } else if (h3.textContent.includes('Server')) {
+        } else if (h3.textContent.includes('Server') || h3.textContent.includes('serveur')) {
             h3.textContent = texts.config.serverConfig;
         }
     });
 
-    document.getElementById('save-config-btn').textContent = texts.config.save;
-    document.getElementById('cancel-config-btn').textContent = texts.config.cancel;
+    const saveBtn = document.getElementById('save-config-btn');
+    const cancelBtn = document.getElementById('cancel-config-btn');
+    if (saveBtn) saveBtn.textContent = texts.config.save;
+    if (cancelBtn) cancelBtn.textContent = texts.config.cancel;
 
-    document.getElementById('prompt-input').placeholder = texts.input.placeholder;
-    document.querySelector('#input-container button').textContent = texts.input.button;
+    // Input field
+    const promptInput = document.getElementById('prompt-input');
+    if (promptInput) promptInput.placeholder = texts.input.placeholder;
 
-    document.querySelector('.history-panel h2').textContent = texts.history.title;
+    // History/Tasks title in sidebar
+    const sidebarTitle = document.querySelector('.side-panel-header h2');
+    if (sidebarTitle) sidebarTitle.textContent = texts.history.title;
 
+    // Sidebar navigation buttons
+    const sidebarBtns = document.querySelectorAll('.sidebar-btn');
+    if (sidebarBtns.length >= 2 && texts.sidebar) {
+        // First button is "New Task"
+        const newTaskBtn = sidebarBtns[0];
+        if (newTaskBtn) {
+            const svg = newTaskBtn.querySelector('svg');
+            newTaskBtn.innerHTML = '';
+            if (svg) newTaskBtn.appendChild(svg);
+            newTaskBtn.appendChild(document.createTextNode(' ' + texts.sidebar.newTask));
+        }
+        // Second button is "Search"
+        const searchBtn = sidebarBtns[1];
+        if (searchBtn) {
+            const svg = searchBtn.querySelector('svg');
+            searchBtn.innerHTML = '';
+            if (svg) searchBtn.appendChild(svg);
+            searchBtn.appendChild(document.createTextNode(' ' + texts.sidebar.search));
+        }
+    }
+
+    // Required marks
     document.querySelectorAll('.required-mark').forEach(mark => {
         mark.textContent = texts.config.required;
     });
@@ -212,10 +311,14 @@ function updatePageContent(lang) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentLang = getCurrentLanguage();
-    document.getElementById('language-select').value = currentLang;
-    updatePageContent(currentLang);
+    const langSelect = document.getElementById('language-select');
+    if (langSelect) {
+        langSelect.value = currentLang;
+        updatePageContent(currentLang);
 
-    document.getElementById('language-select').addEventListener('change', (e) => {
-        setLanguage(e.target.value);
-    });
+        langSelect.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+    }
 });
+
