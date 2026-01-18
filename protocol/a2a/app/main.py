@@ -10,9 +10,12 @@ from a2a.server.tasks import InMemoryPushNotifier, InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from dotenv import load_dotenv
 
-from app.tool.browser_use_tool import _BROWSER_DESCRIPTION
 from app.tool.str_replace_editor import _STR_REPLACE_EDITOR_DESCRIPTION
 from app.tool.terminate import _TERMINATE_DESCRIPTION
+
+_WEB_SEARCH_DESCRIPTION = """Search the web for real-time information about any topic.
+This tool returns comprehensive search results with relevant information, URLs, titles, and descriptions.
+If the primary search engine fails, it automatically falls back to alternative engines."""
 
 from .agent import A2AManus
 from .agent_executor import ManusExecutor
@@ -39,11 +42,11 @@ async def main(host: str = "localhost", port: int = 10000):
                 ],
             ),
             AgentSkill(
-                id="Browser use",
-                name="Browser use Tool",
-                description=_BROWSER_DESCRIPTION,
-                tags=["Use Browser"],
-                examples=["go_to 'https://www.google.com'"],
+                id="Web search",
+                name="Web search Tool",
+                description=_WEB_SEARCH_DESCRIPTION,
+                tags=["Web Search"],
+                examples=["Search for 'Python programming'"],
             ),
             AgentSkill(
                 id="Replace String",

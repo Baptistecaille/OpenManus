@@ -2,7 +2,6 @@ from typing import Dict, List, Optional
 
 from pydantic import Field, model_validator
 
-from app.agent.browser import BrowserContextHelper
 from app.agent.toolcall import ToolCallAgent
 from app.config import config
 from app.daytona.sandbox import create_sandbox, delete_sandbox
@@ -45,7 +44,6 @@ class SandboxManus(ToolCallAgent):
     )
 
     special_tool_names: list[str] = Field(default_factory=lambda: [Terminate().name])
-    browser_context_helper: Optional[BrowserContextHelper] = None
 
     # Track connected MCP servers
     connected_servers: Dict[str, str] = Field(
@@ -53,12 +51,6 @@ class SandboxManus(ToolCallAgent):
     )  # server_id -> url/command
     _initialized: bool = False
     sandbox_link: Optional[dict[str, dict[str, str]]] = Field(default_factory=dict)
-
-    @model_validator(mode="after")
-    def initialize_helper(self) -> "SandboxManus":
-        """Initialize basic components synchronously."""
-        self.browser_context_helper = BrowserContextHelper(self)
-        return self
 
     @classmethod
     async def create(cls, **kwargs) -> "SandboxManus":
@@ -187,8 +179,6 @@ class SandboxManus(ToolCallAgent):
 
     async def cleanup(self):
         """Clean up Manus agent resources."""
-        if self.browser_context_helper:
-            await self.browser_context_helper.cleanup_browser()
         # Disconnect from all MCP servers only if we were initialized
         if self._initialized:
             await self.disconnect_mcp_server()
@@ -201,23 +191,4 @@ class SandboxManus(ToolCallAgent):
             await self.initialize_mcp_servers()
             self._initialized = True
 
-        original_prompt = self.next_step_prompt
-        recent_messages = self.memory.messages[-3:] if self.memory.messages else []
-        browser_in_use = any(
-            tc.function.name == SandboxBrowserTool().name
-            for msg in recent_messages
-            if msg.tool_calls
-            for tc in msg.tool_calls
-        )
-
-        if browser_in_use:
-            self.next_step_prompt = (
-                await self.browser_context_helper.format_next_step_prompt()
-            )
-
-        result = await super().think()
-
-        # Restore original prompt
-        self.next_step_prompt = original_prompt
-
-        return result
+        return await super().think()

@@ -2,17 +2,16 @@ from typing import Dict, List, Optional
 
 from pydantic import Field, model_validator
 
-from app.agent.browser import BrowserContextHelper
 from app.agent.toolcall import ToolCallAgent
 from app.config import config
 from app.logger import logger
 from app.prompt.manus import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
 from app.tool.ask_human import AskHuman
-from app.tool.browser_use_tool import BrowserUseTool
 from app.tool.mcp import MCPClients, MCPClientTool
 from app.tool.python_execute import PythonExecute
 from app.tool.str_replace_editor import StrReplaceEditor
+from app.tool.web_search import WebSearch
 
 
 class Manus(ToolCallAgent):
@@ -34,7 +33,7 @@ class Manus(ToolCallAgent):
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
             PythonExecute(),
-            BrowserUseTool(),
+            WebSearch(),
             StrReplaceEditor(),
             AskHuman(),
             Terminate(),
@@ -42,19 +41,12 @@ class Manus(ToolCallAgent):
     )
 
     special_tool_names: list[str] = Field(default_factory=lambda: [Terminate().name])
-    browser_context_helper: Optional[BrowserContextHelper] = None
 
     # Track connected MCP servers
     connected_servers: Dict[str, str] = Field(
         default_factory=dict
     )  # server_id -> url/command
     _initialized: bool = False
-
-    @model_validator(mode="after")
-    def initialize_helper(self) -> "Manus":
-        """Initialize basic components synchronously."""
-        self.browser_context_helper = BrowserContextHelper(self)
-        return self
 
     @classmethod
     async def create(cls, **kwargs) -> "Manus":
@@ -130,8 +122,6 @@ class Manus(ToolCallAgent):
 
     async def cleanup(self):
         """Clean up Manus agent resources."""
-        if self.browser_context_helper:
-            await self.browser_context_helper.cleanup_browser()
         # Disconnect from all MCP servers only if we were initialized
         if self._initialized:
             await self.disconnect_mcp_server()
@@ -143,23 +133,4 @@ class Manus(ToolCallAgent):
             await self.initialize_mcp_servers()
             self._initialized = True
 
-        original_prompt = self.next_step_prompt
-        recent_messages = self.memory.messages[-3:] if self.memory.messages else []
-        browser_in_use = any(
-            tc.function.name == BrowserUseTool().name
-            for msg in recent_messages
-            if msg.tool_calls
-            for tc in msg.tool_calls
-        )
-
-        if browser_in_use:
-            self.next_step_prompt = (
-                await self.browser_context_helper.format_next_step_prompt()
-            )
-
-        result = await super().think()
-
-        # Restore original prompt
-        self.next_step_prompt = original_prompt
-
-        return result
+        return await super().think()

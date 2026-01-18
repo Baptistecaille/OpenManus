@@ -4,7 +4,6 @@ from tavily import (
     TavilyClient,
     UsageLimitExceededError,
     BadRequestError,
-    ForbiddenError,
     InvalidAPIKeyError,
     MissingAPIKeyError,
 )
@@ -58,7 +57,6 @@ class TavilySearchEngine(WebSearchEngine):
 
         except (
             BadRequestError,
-            ForbiddenError,
             InvalidAPIKeyError,
             MissingAPIKeyError,
         ) as e:
