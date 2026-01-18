@@ -37,9 +37,9 @@ class ProxySettings(BaseModel):
 
 
 class SearchSettings(BaseModel):
-    engine: str = Field(default="Google", description="Search engine the llm to use")
+    engine: str = Field(default="Tavily", description="Search engine the llm to use")
     fallback_engines: List[str] = Field(
-        default_factory=lambda: ["DuckDuckGo", "Baidu", "Bing"],
+        default_factory=lambda: ["Bing", "DuckDuckGo"],
         description="Fallback search engines to try if the primary engine fails",
     )
     retry_delay: int = Field(
@@ -57,6 +57,9 @@ class SearchSettings(BaseModel):
     country: str = Field(
         default="us",
         description="Country code for search results (e.g., us, cn, uk)",
+    )
+    tavily_api_key: str = Field(
+        default="", description="API key for Tavily search engine"
     )
 
 

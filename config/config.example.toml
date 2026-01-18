@@ -79,10 +79,10 @@ temperature = 0.0                          # Controls randomness for vision mode
 
 # Optional configuration, Search settings.
 # [search]
-# Search engine for agent to use. Default is "Google", can be set to "Baidu" or "DuckDuckGo" or "Bing".
-#engine = "Google"
-# Fallback engine order. Default is ["DuckDuckGo", "Baidu", "Bing"] - will try in this order after primary engine fails.
-#fallback_engines = ["DuckDuckGo", "Baidu", "Bing"]
+# Search engine for agent to use. Default is "Tavily", can be set to "Google", "Baidu", "DuckDuckGo" or "Bing".
+#engine = "Tavily"
+# Fallback engine order. Default is ["Bing", "DuckDuckGo"] - will try in this order after primary engine fails.
+#fallback_engines = ["Bing", "DuckDuckGo"]
 # Seconds to wait before retrying all engines again when they all fail due to rate limits. Default is 60.
 #retry_delay = 60
 # Maximum number of times to retry all engines when all fail. Default is 3.
@@ -91,6 +91,8 @@ temperature = 0.0                          # Controls randomness for vision mode
 #lang = "en"
 # Country code for search results. Options: "us" (United States), "cn" (China), etc.
 #country = "us"
+# API key for Tavily search engine (get it from https://tavily.com)
+#tavily_api_key = "tvly-YOUR_API_KEY"
 
 
 ## Sandbox configuration

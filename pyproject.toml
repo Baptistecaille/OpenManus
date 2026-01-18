@@ -40,6 +40,8 @@ dependencies = [
     "setuptools~=75.8.0",
     "daytona>=0.130.0",
     "structlog",
+    "tavily>=1.1.0",
+    "langdetect>=1.0.9",
 ]
 
 [project.scripts]
