@@ -1,4 +1,6 @@
 import asyncio
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -9,6 +11,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from app.config import config
 from app.logger import logger
 from app.tool.base import BaseTool, ToolResult
+from app.tool.file_operators import LocalFileOperator
 from app.tool.search import (
     BaiduSearchEngine,
     BingSearchEngine,
@@ -255,11 +258,11 @@ class WebSearch(BaseTool):
             results = await self._try_all_engines(query, num_results, search_params)
 
             if results:
-                # Fetch content if requested
                 if fetch_content:
                     results = await self._fetch_content_for_results(results)
 
-                # Return a successful structured response
+                await self._save_to_markdown(query, results, lang, country)
+
                 return SearchResponse(
                     status="success",
                     query=query,
@@ -361,13 +364,55 @@ class WebSearch(BaseTool):
 
     def _get_engine_order(self) -> List[str]:
         """Determines the order in which to try search engines."""
-        # Force the order: Tavily, Bing, then others
         forced_order = ["tavily", "bing"]
         
-        # Add remaining engines not in forced_order
         remaining_engines = [e for e in self._search_engine if e not in forced_order]
         
         return forced_order + remaining_engines
+
+    async def _save_to_markdown(
+        self, query: str, results: List[SearchResult], lang: str, country: str
+    ) -> None:
+        """Save search results to a markdown file."""
+        searches_dir = Path(__file__).parent.parent.parent / "searches"
+        searches_dir.mkdir(exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = searches_dir / f"recherche_{timestamp}.md"
+
+        markdown_content = f"""# Résultats de recherche
+
+**Date**: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}  
+**Query**: {query}  
+**Nombre de résultats**: {len(results)}  
+**Langue**: {lang}  
+**Pays**: {country}
+
+---
+
+## Résultats
+
+"""
+
+        for i, result in enumerate(results, 1):
+            markdown_content += f"### {i}. {result.title}\n\n"
+            markdown_content += f"- **URL**: {result.url}\n"
+            markdown_content += f"- **Source**: {result.source}\n"
+            if result.description:
+                markdown_content += f"- **Description**: {result.description}\n"
+            if result.raw_content:
+                content_preview = result.raw_content[:500].replace("\n", " ").strip()
+                if len(result.raw_content) > 500:
+                    content_preview += "..."
+                markdown_content += f"\n**Contenu**: {content_preview}\n"
+            markdown_content += "\n---\n\n"
+
+        file_operator = LocalFileOperator()
+        try:
+            await file_operator.write_file(str(file_path), markdown_content)
+            logger.info(f"Results saved to {file_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save search results to {file_path}: {e}")
 
     @retry(
         stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10)

@@ -2,6 +2,7 @@ from app.agent.base import BaseAgent
 from app.agent.browser import BrowserAgent
 from app.agent.mcp import MCPAgent
 from app.agent.react import ReActAgent
+from app.agent.research_master import ResearchMasterPro
 from app.agent.search import SearchAgent
 from app.agent.swe import SWEAgent
 from app.agent.toolcall import ToolCallAgent
@@ -15,4 +16,5 @@ __all__ = [
     "ToolCallAgent",
     "MCPAgent",
     "SearchAgent",
+    "ResearchMasterPro",
 ]
