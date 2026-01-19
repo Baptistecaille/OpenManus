@@ -81,8 +81,8 @@ temperature = 0.0                          # Controls randomness for vision mode
 # [search]
 # Search engine for agent to use. Default is "Google", can be set to "Baidu" or "DuckDuckGo" or "Bing".
 #engine = "Google"
-# Fallback engine order. Default is ["DuckDuckGo", "Baidu", "Bing"] - will try in this order after primary engine fails.
-#fallback_engines = ["DuckDuckGo", "Baidu", "Bing"]
+# Fallback engine order. Default is ["DuckDuckGo", "Bing"] - will try in this order after primary engine fails.
+#fallback_engines = ["DuckDuckGo", "Bing"]
 # Seconds to wait before retrying all engines again when they all fail due to rate limits. Default is 60.
 #retry_delay = 60
 # Maximum number of times to retry all engines when all fail. Default is 3.
@@ -91,6 +91,19 @@ temperature = 0.0                          # Controls randomness for vision mode
 #lang = "en"
 # Country code for search results. Options: "us" (United States), "cn" (China), etc.
 #country = "us"
+
+# Optional configuration, Enhanced Web Research settings.
+# [research]
+# Default number of URLs to visit per research (default: 5)
+#default_num_urls = 5
+# Maximum number of URLs to visit per research (default: 10)
+#max_num_urls = 10
+# Default timeout in seconds per page (default: 30)
+#default_timeout_per_page = 30
+# Whether to generate synthesis by default (default: true)
+#default_synthesis = true
+# Whether to browse all found URLs by default (default: true)
+#browse_all_by_default = true
 
 
 ## Sandbox configuration

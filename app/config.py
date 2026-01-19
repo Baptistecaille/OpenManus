@@ -37,9 +37,9 @@ class ProxySettings(BaseModel):
 
 
 class SearchSettings(BaseModel):
-    engine: str = Field(default="Google", description="Search engine the llm to use")
+    engine: str = Field(default="Bing", description="Search engine the llm to use")
     fallback_engines: List[str] = Field(
-        default_factory=lambda: ["DuckDuckGo", "Baidu", "Bing"],
+        default_factory=lambda: ["DuckDuckGo", "Google"],
         description="Fallback search engines to try if the primary engine fails",
     )
     retry_delay: int = Field(
@@ -63,6 +63,26 @@ class SearchSettings(BaseModel):
 class RunflowSettings(BaseModel):
     use_data_analysis_agent: bool = Field(
         default=False, description="Enable data analysis agent in run flow"
+    )
+
+
+class ResearchSettings(BaseModel):
+    """Configuration for the enhanced web research tool"""
+
+    default_num_urls: int = Field(
+        default=5, description="Default number of URLs to visit per research"
+    )
+    max_num_urls: int = Field(
+        default=10, description="Maximum number of URLs to visit per research"
+    )
+    default_timeout_per_page: int = Field(
+        default=30, description="Default timeout in seconds per page"
+    )
+    default_synthesis: bool = Field(
+        default=True, description="Whether to generate synthesis by default"
+    )
+    browse_all_by_default: bool = Field(
+        default=True, description="Whether to browse all found URLs by default"
     )
 
 
@@ -182,6 +202,9 @@ class AppConfig(BaseModel):
     search_config: Optional[SearchSettings] = Field(
         None, description="Search configuration"
     )
+    research_config: Optional[ResearchSettings] = Field(
+        None, description="Web research configuration"
+    )
     mcp_config: Optional[MCPSettings] = Field(None, description="MCP configuration")
     run_flow_config: Optional[RunflowSettings] = Field(
         None, description="Run flow configuration"
@@ -285,6 +308,14 @@ class Config:
         search_settings = None
         if search_config:
             search_settings = SearchSettings(**search_config)
+
+        research_config = raw_config.get("research", {})
+        research_settings = None
+        if research_config:
+            research_settings = ResearchSettings(**research_config)
+        else:
+            research_settings = ResearchSettings()
+
         sandbox_config = raw_config.get("sandbox", {})
         if sandbox_config:
             sandbox_settings = SandboxSettings(**sandbox_config)
@@ -321,6 +352,7 @@ class Config:
             "sandbox": sandbox_settings,
             "browser_config": browser_settings,
             "search_config": search_settings,
+            "research_config": research_settings,
             "mcp_config": mcp_settings,
             "run_flow_config": run_flow_settings,
             "daytona_config": daytona_settings,
@@ -347,6 +379,10 @@ class Config:
     @property
     def search_config(self) -> Optional[SearchSettings]:
         return self._config.search_config
+
+    @property
+    def research_config(self) -> Optional[ResearchSettings]:
+        return self._config.research_config
 
     @property
     def mcp_config(self) -> MCPSettings:

@@ -31,7 +31,22 @@ from app.schema import (
 )
 
 
-REASONING_MODELS = ["o1", "o3-mini"]
+REASONING_MODEL_PREFIXES = ["o1", "o3"]
+# Models that require max_completion_tokens instead of max_tokens
+MAX_COMPLETION_TOKENS_MODELS = ["gpt-5-nano"]
+
+
+def is_reasoning_model(model_name: str) -> bool:
+    """Check if a model is a reasoning model that requires max_completion_tokens."""
+    # Check prefix matches for o1, o3 style reasoning models
+    if any(model_name.startswith(prefix) for prefix in REASONING_MODEL_PREFIXES):
+        return True
+    # Check exact matches for specific models
+    if model_name in MAX_COMPLETION_TOKENS_MODELS:
+        return True
+    return False
+
+
 MULTIMODAL_MODELS = [
     "gpt-4-vision-preview",
     "gpt-4o",
@@ -408,7 +423,7 @@ class LLM:
                 "messages": messages,
             }
 
-            if self.model in REASONING_MODELS:
+            if is_reasoning_model(self.model):
                 params["max_completion_tokens"] = self.max_tokens
             else:
                 params["max_tokens"] = self.max_tokens
@@ -537,9 +552,7 @@ class LLM:
             multimodal_content = (
                 [{"type": "text", "text": content}]
                 if isinstance(content, str)
-                else content
-                if isinstance(content, list)
-                else []
+                else content if isinstance(content, list) else []
             )
 
             # Add images to content
@@ -580,7 +593,7 @@ class LLM:
             }
 
             # Add model-specific parameters
-            if self.model in REASONING_MODELS:
+            if is_reasoning_model(self.model):
                 params["max_completion_tokens"] = self.max_tokens
             else:
                 params["max_tokens"] = self.max_tokens
@@ -720,7 +733,7 @@ class LLM:
                 **kwargs,
             }
 
-            if self.model in REASONING_MODELS:
+            if is_reasoning_model(self.model):
                 params["max_completion_tokens"] = self.max_tokens
             else:
                 params["max_tokens"] = self.max_tokens

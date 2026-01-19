@@ -192,7 +192,6 @@ class WebSearch(BaseTool):
     }
     _search_engine: dict[str, WebSearchEngine] = {
         "google": GoogleSearchEngine(),
-        "baidu": BaiduSearchEngine(),
         "duckduckgo": DuckDuckGoSearchEngine(),
         "bing": BingSearchEngine(),
     }
@@ -360,15 +359,15 @@ class WebSearch(BaseTool):
     def _get_engine_order(self) -> List[str]:
         """Determines the order in which to try search engines."""
         preferred = (
-            getattr(config.search_config, "engine", "google").lower()
+            getattr(config.search_config, "engine", "bing").lower()
             if config.search_config
-            else "google"
+            else "bing"
         )
         fallbacks = (
             [engine.lower() for engine in config.search_config.fallback_engines]
             if config.search_config
             and hasattr(config.search_config, "fallback_engines")
-            else []
+            else ["duckduckgo", "google"]
         )
 
         # Start with preferred engine, then fallbacks, then remaining engines
