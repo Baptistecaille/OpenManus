@@ -129,6 +129,14 @@ Examples:
             print("=" * 60)
             print(result.synthesis)
 
+        import re
+        match = re.search(r"Research report saved to: (.+\.md)", str(result.output))
+        if match:
+            md_path = match.group(1)
+            print("\n" + "=" * 60)
+            print(f"📄 Full report: {md_path}")
+            print("=" * 60)
+
         print("\n" + "=" * 60)
         print("✅ Research completed!")
         print("=" * 60)

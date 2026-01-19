@@ -1,5 +1,9 @@
 import asyncio
 import json
+import re
+import os
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -197,7 +201,7 @@ class EnhancedWebResearchTool(BaseTool):
                     query=query, sources=sources, extract_goal=extract_goal
                 )
 
-            return ResearchResult(
+            research_result = ResearchResult(
                 query=query,
                 sources=sources,
                 synthesis=synthesis_text,
@@ -205,14 +209,26 @@ class EnhancedWebResearchTool(BaseTool):
                 total_sources_found=len(search_response.results),
             )
 
+            markdown_path = self._save_markdown(query, research_result)
+            research_result.output = (
+                f"Research report saved to: {markdown_path}\n\n{research_result}"
+            )
+
+            return research_result
+
         except Exception as e:
             logger.error(f"Research failed: {e}")
-            return ResearchResult(
+            error_result = ResearchResult(
                 query=query,
                 error=str(e),
                 total_sources_found=0,
                 total_sources_visited=0,
             )
+            markdown_path = self._save_markdown(query, error_result)
+            error_result.output = (
+                f"Research report saved to: {markdown_path}\n\n{error_result}"
+            )
+            return error_result
 
     async def _visit_and_extract(
         self,
@@ -310,39 +326,74 @@ If the page doesn't contain relevant information, return an empty object {{}}.""
         sources: List[ResearchSource],
         extract_goal: str,
     ) -> str:
-        """Generate an AI synthesis of all researched sources."""
+        """Generate a comprehensive synthesis of all researched sources."""
         from app.llm import LLM
 
         llm = LLM()
 
+        successful_sources = [s for s in sources if not s.error]
+        failed_sources = [s for s in sources if s.error]
+
         sources_text = []
         for i, source in enumerate(sources):
-            status = "ERROR" if source.error else "SUCCESS"
-            sources_text.append(
-                f"Source {i+1} [{status}]: {source.title}"
-                f"\nURL: {source.url}"
-                f"\nExtracted: {json.dumps(source.extracted_content, indent=2, ensure_ascii=False)}"
-            )
+            status = "SUCCESS" if not source.error else "FAILED"
+            content = source.extracted_content or {}
 
-        prompt = f"""You are a research assistant. Synthesize the following research findings:
+            source_info = {
+                "id": i + 1,
+                "status": status,
+                "title": source.title,
+                "url": source.url,
+                "relevance_score": source.relevance_score,
+                "content": content,
+            }
+            sources_text.append(source_info)
 
-Research Query: {query}
-Extraction Goal: {extract_goal}
+        prompt = f"""You are an expert research analyst. Your task is to synthesize findings from multiple web sources into a comprehensive, insightful report.
 
-Sources:
-{'='*60}
-{sources_text}
+## Research Question
+{query}
 
-{'='*60}
+## Extraction Goal
+{extract_goal}
 
-Please provide a comprehensive synthesis that:
-1. Summarizes the key findings from all successful sources
-2. Notes any contradictions or differences between sources
-3. Provides a final assessment or conclusion
+## Sources Analyzed
+{json.dumps(sources_text, indent=2, ensure_ascii=False, default=str)}
 
-If some sources failed, note which ones and why they might be important to revisit.
+---
 
-Write in clear, professional prose. Be thorough but concise."""
+## Required Output Format
+
+### 1. Source Selection Rationale
+Explain WHY these specific sources were chosen:
+- What made each source relevant to the research question?
+- How did the relevance scores influence selection?
+- Were certain sources selected for credibility (official docs,权威 sources)?
+
+### 2. Thematic Synthesis
+Organize findings by THEME, not by source. For each theme:
+- What do the sources collectively say about this topic?
+- Highlight agreements and disagreements between sources
+- Provide specific attributions (Source X found that...)
+
+### 3. Key Insights
+List 3-5 most important takeaways with evidence from the sources.
+
+### 4. Knowledge Gaps
+What questions remain unanswered? Which sources would be worth revisiting?
+
+### 5. Conclusion
+A concise summary that directly answers the original research question.
+
+---
+
+## Writing Guidelines
+- Use prose over lists when possible
+- When using lists, keep them to 4 items maximum with substantial content
+- Be specific: cite source findings, not generalities
+- Explain connections between sources
+- Professional, analytical tone
+- No citations or references section needed"""
 
         try:
             response = await llm.ask(
@@ -354,6 +405,125 @@ Write in clear, professional prose. Be thorough but concise."""
         except Exception as e:
             logger.error(f"Synthesis generation failed: {e}")
             return f"Synthesis generation failed: {str(e)}"
+
+    def _slugify(self, text: str) -> str:
+        """Convert text to a URL-friendly slug."""
+        text = text.lower().strip()
+        text = re.sub(r"[^\w\s-]", "", text)
+        text = re.sub(r"[\s_-]+", "-", text)
+        text = re.sub(r"^-+|-+$", "", text)
+        return text[:50]
+
+    def _generate_markdown(self, query: str, result: ResearchResult) -> str:
+        """Generate a markdown report from research results."""
+        lines = [
+            "# Web Research Report",
+            "",
+            f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"**Query:** {query}",
+            f"**Sources Found:** {result.total_sources_found}",
+            f"**Sources Visited:** {result.total_sources_visited}",
+            "",
+            "---",
+            "",
+            "## Summary",
+            "",
+            f"**Total Sources:** {result.total_sources_found}",
+            f"**Successfully Visited:** {result.total_sources_visited}",
+            f"**Failed:** {result.total_sources_found - result.total_sources_visited}",
+            "",
+            "---",
+            "",
+            "## Sources",
+            "",
+        ]
+
+        for source in result.sources:
+            status = "❌" if source.error else "✅"
+            lines.append(f"### {status} Source {source.position}: {source.title}")
+            lines.append("")
+            lines.append(f"**URL:** [{source.url}]({source.url})")
+            lines.append("")
+
+            if source.error:
+                lines.append(f"**Error:** {source.error}")
+            else:
+                if source.relevance_score > 0:
+                    lines.append(f"**Relevance Score:** {source.relevance_score:.1%}")
+                    lines.append("")
+
+                content = source.extracted_content
+                if content:
+                    if isinstance(content, dict):
+                        if "summary" in content and content["summary"]:
+                            lines.append("**Summary:**")
+                            lines.append(content["summary"])
+                            lines.append("")
+
+                        if "key_points" in content and content["key_points"]:
+                            lines.append("**Key Points:**")
+                            for point in content["key_points"]:
+                                lines.append(f"- {point}")
+                            lines.append("")
+
+                        if "relevant_data" in content and content["relevant_data"]:
+                            lines.append("**Relevant Data:**")
+                            lines.append(
+                                f"```json\n{json.dumps(content['relevant_data'], indent=2)}\n```"
+                            )
+                            lines.append("")
+
+                        if (
+                            "any_other_useful_info" in content
+                            and content["any_other_useful_info"]
+                        ):
+                            lines.append("**Additional Info:**")
+                            lines.append(content["any_other_useful_info"])
+                            lines.append("")
+
+                        if "raw_text" in content:
+                            lines.append("**Raw Content:**")
+                            lines.append(
+                                content["raw_text"][:500] + "..."
+                                if len(content["raw_text"]) > 500
+                                else content["raw_text"]
+                            )
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+
+        if result.synthesis:
+            lines.append("## Synthesis")
+            lines.append("")
+            lines.append(result.synthesis)
+            lines.append("")
+
+        lines.append("")
+        lines.append("---")
+        lines.append(
+            f"*Report generated by WebResearchAgent on {datetime.now().strftime('%Y-%m-%d')}*"
+        )
+
+        return "\n".join(lines)
+
+    def _save_markdown(self, query: str, result: ResearchResult) -> str:
+        """Save research results to a markdown file and return the path."""
+        workspace_root = config.workspace_root
+        research_dir = workspace_root / "research"
+        research_dir.mkdir(exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        slug = self._slugify(query)
+        filename = f"{timestamp}_{slug}.md"
+        filepath = research_dir / filename
+
+        markdown_content = self._generate_markdown(query, result)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(markdown_content)
+
+        logger.info(f"   📄 Research report saved to: {filepath}")
+        return str(filepath)
 
 
 if __name__ == "__main__":

@@ -141,7 +141,15 @@ class BrowserUseTool(BaseTool, Generic[Context]):
     async def _ensure_browser_initialized(self) -> BrowserContext:
         """Ensure browser and context are initialized."""
         if self.browser is None:
-            browser_config_kwargs = {"headless": False, "disable_security": True}
+            headless_default = (
+                getattr(config.browser_config, "headless", False)
+                if config.browser_config
+                else False
+            )
+            browser_config_kwargs = {
+                "headless": headless_default,
+                "disable_security": True,
+            }
 
             if config.browser_config:
                 from browser_use.browser.browser import ProxySettings
@@ -553,11 +561,23 @@ Page content:
         """Ensure cleanup when object is destroyed."""
         if self.browser is not None or self.context is not None:
             try:
-                asyncio.run(self.cleanup())
+                # Check if there's already a running event loop
+                loop = asyncio.get_running_loop()
+                # If we're here, a loop is running - schedule cleanup as a task
+                loop.create_task(self.cleanup())
             except RuntimeError:
-                loop = asyncio.new_event_loop()
-                loop.run_until_complete(self.cleanup())
-                loop.close()
+                # No running loop - we can create one
+                try:
+                    asyncio.run(self.cleanup())
+                except Exception:
+                    # Last resort: try with a new event loop
+                    try:
+                        loop = asyncio.new_event_loop()
+                        loop.run_until_complete(self.cleanup())
+                        loop.close()
+                    except Exception:
+                        # Give up gracefully - browser will be cleaned up by OS
+                        pass
 
     @classmethod
     def create_with_context(cls, context: Context) -> "BrowserUseTool[Context]":

@@ -56,9 +56,9 @@ temperature = 0.0                          # Controls randomness for vision mode
 # temperature = 0.0
 
 # Optional configuration for specific browser configuration
-# [browser]
-# Whether to run browser in headless mode (default: false)
-#headless = false
+[browser]
+# Whether to run browser in headless mode (default: false). Set to true to hide the browser window.
+headless = false
 # Disable browser security features (default: true)
 #disable_security = true
 # Extra arguments to pass to the browser
