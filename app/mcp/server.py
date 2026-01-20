@@ -16,9 +16,10 @@ from mcp.server.fastmcp import FastMCP
 from app.logger import logger
 from app.tool.base import BaseTool
 from app.tool.bash import Bash
-from app.tool.browser_use_tool import BrowserUseTool
+
 from app.tool.str_replace_editor import StrReplaceEditor
 from app.tool.terminate import Terminate
+from app.tool.webfetch import WebFetch
 
 
 class MCPServer:
@@ -30,9 +31,10 @@ class MCPServer:
 
         # Initialize standard tools
         self.tools["bash"] = Bash()
-        self.tools["browser"] = BrowserUseTool()
+
         self.tools["editor"] = StrReplaceEditor()
         self.tools["terminate"] = Terminate()
+        self.tools["webfetch"] = WebFetch()
 
     def register_tool(self, tool: BaseTool, method_name: Optional[str] = None) -> None:
         """Register a tool with parameter validation and documentation."""
@@ -138,9 +140,7 @@ class MCPServer:
     async def cleanup(self) -> None:
         """Clean up server resources."""
         logger.info("Cleaning up resources")
-        # Follow original cleanup logic - only clean browser tool
-        if "browser" in self.tools and hasattr(self.tools["browser"], "cleanup"):
-            await self.tools["browser"].cleanup()
+
 
     def register_all_tools(self) -> None:
         """Register all tools with the server."""
