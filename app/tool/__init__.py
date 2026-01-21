@@ -5,6 +5,8 @@ from app.tool.str_replace_editor import StrReplaceEditor
 from app.tool.tool_collection import ToolCollection
 from app.tool.create_chat_completion import CreateChatCompletion
 from app.tool.planning import PlanningTool
+from app.tool.ask_human import AskHuman
+from app.tool.human_in_the_loop import HumanInTheLoop
 
 
 
@@ -16,4 +18,6 @@ __all__ = [
     "ToolCollection",
     "CreateChatCompletion",
     "PlanningTool",
+    "AskHuman",
+    "HumanInTheLoop",
 ]

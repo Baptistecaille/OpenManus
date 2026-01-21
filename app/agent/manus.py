@@ -9,6 +9,7 @@ from app.logger import logger
 from app.prompt.manus import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
 from app.tool.ask_human import AskHuman
+from app.tool.human_in_the_loop import HumanInTheLoop
 
 from app.tool.mcp import MCPClients, MCPClientTool
 from app.tool.python_execute import PythonExecute
@@ -37,6 +38,7 @@ class Manus(ToolCallAgent):
 
             StrReplaceEditor(),
             AskHuman(),
+            HumanInTheLoop(),
             Terminate(),
         )
     )
@@ -53,7 +55,8 @@ class Manus(ToolCallAgent):
     @model_validator(mode="after")
     def initialize_helper(self) -> "Manus":
         """Initialize basic components synchronously."""
-        self.browser_context_helper = BrowserContextHelper(self)
+        # Browser functionality not available in this version
+        # self.browser_context_helper = BrowserContextHelper(self)
         return self
 
     @classmethod

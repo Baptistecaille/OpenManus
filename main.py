@@ -2,7 +2,6 @@ import argparse
 import asyncio
 
 from app.agent.manus import Manus
-from app.agent.web_research import WebResearchAgent
 from app.logger import logger
 
 
@@ -15,17 +14,13 @@ async def main():
         "--agent",
         type=str,
         default="manus",
-        choices=["manus", "research", "web-research"],
-        help="Agent to use: 'manus' for general purpose, 'research' for web research",
+        choices=["manus"],
+        help="Agent to use: 'manus' for general purpose",
     )
     args = parser.parse_args()
 
-    if args.agent in ["research", "web-research"]:
-        agent = await WebResearchAgent.create()
-        logger.info("Using WebResearch agent for comprehensive web research")
-    else:
-        agent = await Manus.create()
-        logger.info("Using Manus agent for general purpose tasks")
+    agent = await Manus.create()
+    logger.info("Using Manus agent for general purpose tasks")
 
     try:
         prompt = args.prompt if args.prompt else input("Enter your prompt: ")
