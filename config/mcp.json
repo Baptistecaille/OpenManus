@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "word-document-server": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["/Users/baptistecaillerie/Documents/OpenManus/mcp-servers/Office-Word-MCP-Server/word_mcp_server.py"]
+    }
+  }
+}

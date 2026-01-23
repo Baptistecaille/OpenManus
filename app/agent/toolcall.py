@@ -2,10 +2,10 @@ import asyncio
 import json
 from typing import Any, List, Optional, Union
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from app.agent.react import ReActAgent
-from app.exceptions import TokenLimitExceeded
+from app.exceptions import TokenLimitExceeded, AgentSuspend
 from app.logger import logger
 from app.prompt.toolcall import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.schema import TOOL_CHOICE_TYPE, AgentState, Message, ToolCall, ToolChoice
@@ -18,6 +18,9 @@ TOOL_CALL_REQUIRED = "Tool calls required but none provided"
 
 class ToolCallAgent(ReActAgent):
     """Base agent class for handling tool/function calls with enhanced abstraction"""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     name: str = "toolcall"
     description: str = "an agent that can execute tool calls."
@@ -178,8 +181,35 @@ class ToolCallAgent(ReActAgent):
 
         return "\n\n".join(results)
 
+    _suspended_tool_call: Optional[ToolCall] = PrivateAttr(default=None)
+
+    def _resume_suspended_tool(self, result: str):
+        """Resume execution of a suspended tool call"""
+        if not self._suspended_tool_call:
+            raise RuntimeError("No suspended tool call to resume")
+        
+        command = self._suspended_tool_call
+        self._suspended_tool_call = None
+        name = command.function.name
+        
+        logger.info(
+            f"🎯 Tool '{name}' completed its mission (RESUMED)! Result: {result}"
+        )
+
+        self._current_base64_image = None
+
+        # Add tool response to memory
+        tool_msg = Message.tool_message(
+            content=result,
+            tool_call_id=command.id,
+            name=name,
+            base64_image=self._current_base64_image,
+        )
+        self.memory.add_message(tool_msg)
+        
+        self.state = AgentState.IDLE
+
     async def execute_tool(self, command: ToolCall) -> str:
-        """Execute a single tool call with robust error handling"""
         if not command or not command.function or not command.function.name:
             return "Error: Invalid command format"
 
@@ -192,22 +222,31 @@ class ToolCallAgent(ReActAgent):
             args = json.loads(command.function.arguments or "{}")
 
             # Trigger PreToolUse hooks
-            await self.hook_manager.trigger_hooks(
-                event="PreToolUse",
-                tool_name=name,
-                context={"tool_name": name, "tool_input": args},
-            )
+            if self.hook_manager:
+                await self.hook_manager.trigger_hooks(
+                    event="PreToolUse",
+                    tool_name=name,
+                    context={"tool_name": name, "tool_input": args},
+                )
 
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
-            result = await self.available_tools.execute(name=name, tool_input=args)
+            try:
+                result = await self.available_tools.execute(name=name, tool_input=args)
+            except AgentSuspend as e:
+                # Catch suspension request
+                logger.info(f"Tool {name} requested suspension: {e.question}")
+                self._suspended_tool_call = command
+                # Re-raise to be handled by run loop
+                raise e
 
             # Trigger PostToolUse hooks
-            await self.hook_manager.trigger_hooks(
-                event="PostToolUse",
-                tool_name=name,
-                context={"tool_name": name, "tool_input": args, "result": result},
-            )
+            if self.hook_manager:
+                await self.hook_manager.trigger_hooks(
+                    event="PostToolUse",
+                    tool_name=name,
+                    context={"tool_name": name, "tool_input": args, "result": result},
+                )
 
             # Handle special tools
             await self._handle_special_tool(name=name, result=result)
@@ -231,6 +270,8 @@ class ToolCallAgent(ReActAgent):
                 f"📝 Oops! The arguments for '{name}' don't make sense - invalid JSON, arguments:{command.function.arguments}"
             )
             return f"Error: {error_msg}"
+        except AgentSuspend:
+            raise # Re-raise suspension
         except Exception as e:
             error_msg = f"⚠️ Tool '{name}' encountered a problem: {str(e)}"
             logger.exception(error_msg)

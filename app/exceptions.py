@@ -11,3 +11,10 @@ class OpenManusError(Exception):
 
 class TokenLimitExceeded(OpenManusError):
     """Exception raised when the token limit is exceeded"""
+
+
+class AgentSuspend(OpenManusError):
+    """Exception raised when agent needs to suspend execution for human input"""
+    def __init__(self, question: str):
+        self.question = question
+        super().__init__(question)

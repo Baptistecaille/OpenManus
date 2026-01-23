@@ -48,6 +48,13 @@ class ToolCollection:
     def get_tool(self, name: str) -> BaseTool:
         return self.tool_map.get(name)
 
+    def remove_tool(self, name: str):
+        """Remove a tool from the collection by name."""
+        if name in self.tool_map:
+            del self.tool_map[name]
+            self.tools = tuple(t for t in self.tools if t.name != name)
+        return self
+
     def add_tool(self, tool: BaseTool):
         """Add a single tool to the collection.
 

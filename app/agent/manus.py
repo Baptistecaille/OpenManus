@@ -1,6 +1,6 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import Field, model_validator
+from pydantic import Field, PrivateAttr, model_validator
 
 
 from app.agent.toolcall import ToolCallAgent
@@ -8,7 +8,7 @@ from app.config import config
 from app.logger import logger
 from app.prompt.manus import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.tool import Terminate, ToolCollection
-from app.tool.ask_human import AskHuman
+
 from app.tool.human_in_the_loop import HumanInTheLoop
 
 from app.tool.mcp import MCPClients, MCPClientTool
@@ -37,7 +37,7 @@ class Manus(ToolCallAgent):
             PythonExecute(),
 
             StrReplaceEditor(),
-            AskHuman(),
+
             HumanInTheLoop(),
             Terminate(),
         )
@@ -50,13 +50,14 @@ class Manus(ToolCallAgent):
     connected_servers: Dict[str, str] = Field(
         default_factory=dict
     )  # server_id -> url/command
-    _initialized: bool = False
+    _initialized: bool = PrivateAttr(default=False)
+    _browser_context_helper: Any = PrivateAttr(default=None)
 
     @model_validator(mode="after")
     def initialize_helper(self) -> "Manus":
         """Initialize basic components synchronously."""
         # Browser functionality not available in this version
-        # self.browser_context_helper = BrowserContextHelper(self)
+        # self._browser_context_helper = BrowserContextHelper(self)
         return self
 
     @classmethod
@@ -71,6 +72,18 @@ class Manus(ToolCallAgent):
         """Initialize connections to configured MCP servers."""
         for server_id, server_config in config.mcp_config.servers.items():
             try:
+                # Check if already connected (when reusing mcp_clients)
+                if server_id in self.mcp_clients.sessions:
+                    logger.info(f"Reusing existing connection to MCP server {server_id}")
+                    new_tools = [
+                        tool
+                        for tool in self.mcp_clients.tools
+                        if tool.server_id == server_id
+                    ]
+                    self.available_tools.add_tools(*new_tools)
+                    self.connected_servers[server_id] = "reused"
+                    continue
+
                 if server_config.type == "sse":
                     if server_config.url:
                         await self.connect_mcp_server(server_config.url, server_id)
@@ -133,8 +146,8 @@ class Manus(ToolCallAgent):
 
     async def cleanup(self):
         """Clean up Manus agent resources."""
-        if self.browser_context_helper:
-            await self.browser_context_helper.cleanup_browser()
+        if self._browser_context_helper:
+            await self._browser_context_helper.cleanup_browser()
         # Disconnect from all MCP servers only if we were initialized
         if self._initialized:
             await self.disconnect_mcp_server()

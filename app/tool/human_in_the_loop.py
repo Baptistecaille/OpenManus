@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 from app.logger import logger
 from app.tool.base import BaseTool
+from app.exceptions import AgentSuspend
 
 
 class CriticalityLevel(Enum):
@@ -52,22 +53,29 @@ class HumanInTheLoop(BaseTool):
     - State persistence
     - Multi-channel approval support (console, future: email/Slack)
     - LangGraph-style interrupt/resume patterns
+    - General inquiry mode to ask human for help
     """
 
     name: str = "human_in_the_loop"
-    description: str = "Request human approval for critical actions with configurable criticality levels and timeout handling."
+    description: str = "Request human approval for actions OR ask the human for help/information. Set 'mode' to 'approval' (default) or 'ask_human'."
 
-    parameters: str = {
+    parameters: dict = {
         "type": "object",
         "properties": {
             "action_description": {
                 "type": "string",
-                "description": "Clear description of action requiring approval"
+                "description": "Description of action requiring approval OR the question to ask the human"
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["approval", "ask_human"],
+                "description": "Mode of interaction. 'approval' for permission to execute an action, 'ask_human' for general questions.",
+                "default": "approval"
             },
             "criticality": {
                 "type": "string",
                 "enum": ["low", "medium", "high", "critical"],
-                "description": "Action criticality level",
+                "description": "Action criticality level (only for approval mode)",
                 "default": "medium"
             },
             "context": {
@@ -77,13 +85,13 @@ class HumanInTheLoop(BaseTool):
             },
             "timeout_seconds": {
                 "type": "integer",
-                "description": "Seconds to wait for approval",
-                "default": 300
+                "description": "Seconds to wait for approval/response (default: None for infinite wait)",
+                "default": None
             },
             "fallback_action": {
                 "type": "string",
                 "enum": ["deny", "auto_approve"],
-                "description": "Action on timeout",
+                "description": "Action on timeout (only for approval mode)",
                 "default": "deny"
             }
         },
@@ -95,58 +103,56 @@ class HumanInTheLoop(BaseTool):
     async def execute(
         self,
         action_description: str,
+        mode: str = "approval",
         criticality: str = "medium",
         context: Optional[Dict[str, Any]] = None,
-        timeout_seconds: int = 300,
+        timeout_seconds: Optional[int] = None,
         fallback_action: str = "deny"
     ) -> Dict[str, Any]:
         """
-        Execute HITL approval request.
-
-        Returns approval decision with metadata.
+        Execute HITL request by suspending execution and asking the human.
         """
+        # Instead of printing to console and blocking, we raise a suspension signal.
+        # This allows the upstream system (server) to capture the intent and present it to the user.
+        # When resumed, the 'answer' will be passed as the result of this tool execution.
+        
+        raise AgentSuspend(question=action_description)
+
+    async def _ask_human_question(self, question: str, timeout_seconds: Optional[int]) -> Dict[str, Any]:
+        """Ask a general question to the human."""
+        print(f"\n{'='*70}\nQUESTION DE L'AGENT\n{'='*70}")
+        print(f"Question: {question}")
+        if timeout_seconds:
+            print(f"Timeout: {timeout_seconds} secondes")
+        else:
+            print("Timeout: Aucun (Attente infinie)")
+        print("\nVotre réponse: ", end="", flush=True)
+
         try:
-            crit_level = CriticalityLevel(criticality.lower())
-
-            if crit_level == CriticalityLevel.LOW:
-                logger.info(f"Auto-approving low-criticality action: {action_description}")
-                return {
-                    "approved": True,
-                    "auto_approved": True,
-                    "reason": "Low criticality"
-                }
-
-            request = HITLRequest(
-                action_description=action_description,
-                criticality=crit_level,
-                context=context or {},
-                timeout_seconds=timeout_seconds
-            )
-
-            request_id = f"hitl_{int(time.time())}_{hash(action_description) % 10000}"
-            self._pending_requests[request_id] = request
-
-            logger.info(f"HITL request created: {request_id} - {action_description}")
-
-            response = await self._get_human_approval(request_id, request, fallback_action)
-
-            self._pending_requests.pop(request_id, None)
-
+            if timeout_seconds:
+                response_text = await asyncio.wait_for(
+                    asyncio.to_thread(input),
+                    timeout=timeout_seconds
+                )
+            else:
+                response_text = await asyncio.to_thread(input)
+                
             return {
-                "approved": response.approved,
-                "request_id": request_id,
-                "criticality": criticality,
-                "response_time": time.time() - response.timestamp,
-                "feedback": response.feedback,
-                "modified_action": response.modified_action
+                "answer": response_text.strip(),
+                "status": "answered"
             }
-
-        except Exception as e:
-            logger.error(f"HITL execution failed: {e}")
+        except asyncio.TimeoutError:
+            print(f"\nTIMEOUT: Pas de réponse dans {timeout_seconds} secondes")
             return {
-                "approved": False,
+                "answer": None,
+                "error": "Timeout",
+                "status": "timeout"
+            }
+        except Exception as e:
+            return {
+                "answer": None,
                 "error": str(e),
-                "fallback": fallback_action
+                "status": "error"
             }
 
     async def _get_human_approval(
@@ -159,10 +165,16 @@ class HumanInTheLoop(BaseTool):
         prompt = self._format_approval_prompt(request_id, request)
 
         try:
-            response_text = await asyncio.wait_for(
-                asyncio.to_thread(input, prompt),
-                timeout=request.timeout_seconds
-            )
+            print(prompt)
+            
+            if request.timeout_seconds and request.timeout_seconds < 86400: # If explicit small timeout
+                 response_text = await asyncio.wait_for(
+                    asyncio.to_thread(input, ""),
+                    timeout=request.timeout_seconds
+                )
+            else:
+                 # Infinite wait logic if timeout is huge (default behavior now)
+                 response_text = await asyncio.to_thread(input, "")
 
             response_text = response_text.strip().lower()
 
@@ -235,7 +247,7 @@ class HumanInTheLoop(BaseTool):
             "  'non'/'n' - Refuser l'action",
             "  'modifier <description>' - Approuver avec modification",
             "",
-            f"Timeout: {request.timeout_seconds} secondes",
+            f"Timeout: {request.timeout_seconds if request.timeout_seconds < 86400 else 'Aucun'} secondes",
             "",
             "Votre décision: "
         ])
@@ -256,6 +268,7 @@ class HumanInTheLoop(BaseTool):
 
         result = await self.execute(
             action_description=action_description,
+            mode="approval",
             criticality=criticality,
             context=context
         )

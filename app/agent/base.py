@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
+from app.exceptions import AgentSuspend
 from app.llm import LLM
 from app.logger import logger
 from app.sandbox.client import SANDBOX_CLIENT
@@ -67,7 +68,7 @@ class BaseAgent(BaseModel, ABC):
     # Private attributes (use PrivateAttr for underscore-prefixed fields)
     _original_system_prompt: Optional[str] = PrivateAttr(default=None)
     _original_tools_filter: Optional[List[str]] = PrivateAttr(default=None)
-    _skills_enabled: bool = PrivateAttr(default=True)
+    _skills_enabled: bool = PrivateAttr(default=False)
 
     class Config:
         arbitrary_types_allowed = True
@@ -144,43 +145,175 @@ class BaseAgent(BaseModel, ABC):
         kwargs = {"base64_image": base64_image, **(kwargs if role == "tool" else {})}
         self.memory.add_message(message_map[role](content, **kwargs))
 
-    async def run(self, request: Optional[str] = None) -> str:
-        """Execute the agent's main loop asynchronously.
-
-        Args:
-            request: Optional initial user request to process.
+    async def _analyze_prompt_complexity(self, request: str) -> bool:
+        """
+        Analyze if the prompt requires tools/thinking or can be answered naturally.
 
         Returns:
-            A string summarizing the execution results.
-
-        Raises:
-            RuntimeError: If the agent is not in IDLE state at start.
+            True if tools/thinking are needed, False if natural response suffices
         """
-        if self.state != AgentState.IDLE:
-            raise RuntimeError(f"Cannot run agent from state: {self.state}")
+        if not request:
+            return False
 
-        if request:
-            self.update_memory("user", request)
+        # Clean and analyze the request
+        req_lower = request.lower().strip() if request else ""
 
-        results: List[str] = []
-        async with self.state_context(AgentState.RUNNING):
-            while (
-                self.current_step < self.max_steps and self.state != AgentState.FINISHED
-            ):
-                self.current_step += 1
-                logger.info(f"Executing step {self.current_step}/{self.max_steps}")
-                step_result = await self.step()
+        # Simple greetings - no tools needed
+        simple_greetings = ["salut", "hello", "hi", "hey", "bonjour", "hola", "ciao", "greetings", "hi there"]
+        if any(greeting in req_lower for greeting in simple_greetings):
+            return False
 
-                # Check for stuck state
-                if self.is_stuck():
-                    self.handle_stuck_state()
+        # Questions about the agent itself - no tools needed
+        self_questions = ["who are you", "what are you", "what can you do", "help", "how do you work"]
+        if any(question in req_lower for question in self_questions):
+            logger.info(f"Detected self-question: {request} - responding naturally")
+            return False
 
-                results.append(f"Step {self.current_step}: {step_result}")
+        # Conversational/small talk - no tools needed
+        conversational = ["how are you", "thank you", "thanks", "good morning", "good afternoon", "good evening"]
+        if any(phrase in req_lower for phrase in conversational):
+            return False
 
-            if self.current_step >= self.max_steps:
-                self.current_step = 0
-                self.state = AgentState.IDLE
-                results.append(f"Terminated: Reached max steps ({self.max_steps})")
+        # If we have LLM available, use it for more sophisticated analysis
+        if self.llm and self.llm.client is not None:
+            try:
+                analysis_prompt = f"""Analyze this user request and determine if it requires using tools, searching, or complex reasoning.
+
+Request: "{request}"
+
+Respond with only "YES" if tools/reasoning are needed, or "NO" if it can be answered naturally/conversationally.
+
+Examples:
+- "Hello" → NO
+- "What's the weather?" → YES (needs weather API)
+- "Tell me a joke" → NO
+- "Search for Python tutorials" → YES (needs search)
+- "How are you?" → NO"""
+
+                analysis = await self.llm.ask(
+                    messages=[{"role": "user", "content": analysis_prompt}],
+                    temperature=0.0
+                )
+                return analysis and "YES" in analysis.upper()
+            except Exception:
+                pass  # Fall back to heuristic analysis
+
+        # Heuristic analysis for mock mode
+        # Check for action words that suggest tool usage
+        action_words = ["search", "find", "create", "write", "calculate", "analyze", "generate", "convert"]
+        if any(word in req_lower for word in action_words):
+            return True
+
+        # Check for question words that might need research
+        question_words = ["what is", "how to", "where can", "when did", "why does"]
+        if any(word in req_lower for word in question_words):
+            return True
+
+        # Default to natural response for unclear or simple requests
+        return False
+
+    async def _generate_natural_response(self, request: str) -> str:
+        """
+        Generate a natural response for simple requests in mock mode.
+        """
+        req_lower = request.lower().strip() if request else ""
+
+        # Greetings
+        if any(greeting in req_lower for greeting in ["salut", "hello", "hi", "hey", "bonjour", "hola", "ciao"]):
+            return "Salut! I'm running in mock mode without an API key. Configure your OpenAI API key in config/config.toml to enable full functionality."
+
+        # Self-introduction
+        if any(q in req_lower for q in ["who are you", "what are you", "what can you do"]):
+            return "I'm Manus, an AI agent that can help you with various tasks. I'm currently running in mock mode without an API key. Configure your OpenAI API key in config/config.toml to enable full functionality."
+
+        # Help requests
+        if "help" in req_lower:
+            return "I can help you with many tasks! I'm currently running in mock mode without an API key. Configure your OpenAI API key in config/config.toml to enable full functionality."
+
+        # Default natural response
+        return f"I understand you're asking about: '{request}'. I'm currently running in mock mode without an API key. Configure your OpenAI API key in config/config.toml to enable full functionality."
+
+    async def run(self, request: Optional[str] = None) -> str:
+        """
+        Run the agent with the given request.
+
+        Args:
+            request: The user request to process
+
+        Returns:
+            The final response from the agent
+        """
+        results = []
+        # Initialize/reset agent state
+        self.current_step = 0
+        self.state = AgentState.IDLE
+
+        # First determine if this prompt requires tools/thinking or can be answered naturally
+        needs_tools = await self._analyze_prompt_complexity(request)
+
+        if not needs_tools:
+            # Respond naturally without full reasoning loop
+            if self.llm and self.llm.client is None:
+                # Mock mode natural responses
+                return await self._generate_natural_response(request)
+            else:
+                try:
+                    # Use LLM for natural response
+                    natural_response = await self.llm.ask(
+                        messages=[{"role": "user", "content": request}],
+                        system_msgs=[{"role": "system", "content": "Respond naturally and helpfully to the user's request. Keep your response concise and direct."}]
+                    )
+                    return natural_response or "I understand your request, but I'm having trouble generating a response right now."
+                except Exception as e:
+                    logger.warning(f"LLM natural response failed: {e}. Falling back to mock response.")
+                    return await self._generate_natural_response(request)
+
+        # Check if this is a simple greeting in mock mode (fallback for complex analysis)
+        if request and self.llm and self.llm.client is None:
+            request_str = str(request)
+            simple_greetings = ["salut", "hello", "hi", "hey", "bonjour", "hola", "ciao", "greetings", "hi there"]
+            if any(greeting in request_str.lower().strip() for greeting in simple_greetings):
+                return "Salut! I'm running in mock mode without an API key. Configure your OpenAI API key in config/config.toml to enable full functionality."
+
+        try:
+            # We don't force state to RUNNING if it's already running/suspended, we manage it
+            # But the state_context manager sets it to RUNNING.
+            # If we resume, we want to enter RUNNING state.
+            
+            async with self.state_context(AgentState.RUNNING):
+                while (
+                    self.current_step < self.max_steps and self.state != AgentState.FINISHED and self.state != AgentState.SUSPENDED
+                ):
+                    self.current_step += 1
+                    logger.info(f"Executing step {self.current_step}/{self.max_steps}")
+                    
+                    try:
+                        step_result = await self.step()
+                        
+                        # Check for stuck state
+                        if self.is_stuck():
+                            self.handle_stuck_state()
+
+                        results.append(f"Step {self.current_step}: {step_result}")
+                        
+                    except AgentSuspend as e:
+                        logger.info(f"Agent execution suspended: {e.question}")
+                        self.state = AgentState.SUSPENDED
+                        # Propagate exception to allow caller (server) to handle it
+                        raise e
+
+                if self.current_step >= self.max_steps:
+                    self.current_step = 0
+                    self.state = AgentState.IDLE
+                    results.append(f"Terminated: Reached max steps ({self.max_steps})")
+        
+        except AgentSuspend:
+            # Re-raise to caller
+            raise
+        except Exception as e:
+            # state_context handles setting state to ERROR
+            raise e
+            
         await SANDBOX_CLIENT.cleanup()
         return "\n".join(results) if results else "No steps executed"
 
@@ -261,8 +394,11 @@ class BaseAgent(BaseModel, ABC):
             logger.debug("No skills available for matching")
             return False
 
-        # Match skill
-        skill_name = await self.skill_matcher.match_skill(request, available_skills)
+        try:
+            skill_name = await self.skill_matcher.match_skill(request, available_skills)
+        except Exception as e:
+            logger.debug(f"Skill matching failed: {e}")
+            return False
 
         if not skill_name:
             logger.debug("No skill matched the request")
