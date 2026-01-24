@@ -2,187 +2,455 @@
   <img src="assets/logo.jpg" width="200"/>
 </p>
 
-English | [中文](README_zh.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
+<h1 align="center">OpenManus</h1>
 
-[![GitHub stars](https://img.shields.io/github/stars/FoundationAgents/OpenManus?style=social)](https://github.com/FoundationAgents/OpenManus/stargazers)
-&ensp;
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) &ensp;
-[![Discord Follow](https://dcbadge.vercel.app/api/server/DYn29wFk9z?style=flat)](https://discord.gg/DYn29wFk9z)
-[![Demo](https://img.shields.io/badge/Demo-Hugging%20Face-yellow)](https://huggingface.co/spaces/lyh-917/OpenManusDemo)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15186407.svg)](https://doi.org/10.5281/zenodo.15186407)
+<p align="center">
+  <strong>An open-source framework for building general AI agents</strong>
+</p>
 
-# 👋 OpenManus
+<p align="center">
+  English | <a href="README_zh.md">中文</a> | <a href="README_ko.md">한국어</a> | <a href="README_ja.md">日本語</a>
+</p>
 
-Manus is incredible, but OpenManus can achieve any idea without an *Invite Code* 🛫!
+<p align="center">
+  <a href="https://github.com/FoundationAgents/OpenManus/stargazers"><img src="https://img.shields.io/github/stars/FoundationAgents/OpenManus?style=social" alt="GitHub stars"></a>
+  &ensp;
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  &ensp;
+  <a href="https://discord.gg/DYn29wFk9z"><img src="https://dcbadge.vercel.app/api/server/DYn29wFk9z?style=flat" alt="Discord"></a>
+  &ensp;
+  <a href="https://huggingface.co/spaces/lyh-917/OpenManusDemo"><img src="https://img.shields.io/badge/Demo-Hugging%20Face-yellow" alt="Demo"></a>
+  &ensp;
+  <a href="https://doi.org/10.5281/zenodo.15186407"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.15186407.svg" alt="DOI"></a>
+</p>
 
-Our team members [@Xinbin Liang](https://github.com/mannaandpoem) and [@Jinyu Xiang](https://github.com/XiangJinyu) (core authors), along with [@Zhaoyang Yu](https://github.com/MoshiQAQ), [@Jiayi Zhang](https://github.com/didiforgithub), and [@Sirui Hong](https://github.com/stellaHSR), we are from [@MetaGPT](https://github.com/geekan/MetaGPT). The prototype is launched within 3 hours and we are keeping building!
+---
 
-It's a simple implementation, so we welcome any suggestions, contributions, and feedback!
+## Table of Contents
 
-Enjoy your own agent with OpenManus!
+- [About](#about)
+- [Key Features](#key-features)
+- [Demo](#demo)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Quick Start](#quick-start)
+- [Advanced Usage](#advanced-usage)
+- [Architecture](#architecture)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Community](#community)
+- [Sponsors](#sponsors)
+- [Acknowledgements](#acknowledgements)
+- [Citation](#citation)
+- [License](#license)
 
-We're also excited to introduce [OpenManus-RL](https://github.com/OpenManus/OpenManus-RL), an open-source project dedicated to reinforcement learning (RL)- based (such as GRPO) tuning methods for LLM agents, developed collaboratively by researchers from UIUC and OpenManus.
+---
 
-## Project Demo
+## About
 
-<video src="https://private-user-images.githubusercontent.com/61239030/420168772-6dcfd0d2-9142-45d9-b74e-d10aa75073c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDEzMTgwNTksIm5iZiI6MTc0MTMxNzc1OSwicGF0aCI6Ii82MTIzOTAzMC80MjAxNjg3NzItNmRjZmQwZDItOTE0Mi00NWQ5LWI3NGUtZDEwYWE3NTA3M2M2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAzMDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMzA3VDAzMjIzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjFkNjlmYWNjMmEzOTliM2Y3M2VlYjgyNDRlZDJmOWE3NWZhZjE1MzhiZWY4YmQ3NjdkNTYwYTU5ZDA2MzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.UuHQCgWYkh0OQq9qsUWqGsUbhG3i9jcZDAMeHjLt5T4" data-canonical-src="https://private-user-images.githubusercontent.com/61239030/420168772-6dcfd0d2-9142-45d9-b74e-d10aa75073c6.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDEzMTgwNTksIm5iZiI6MTc0MTMxNzc1OSwicGF0aCI6Ii82MTIzOTAzMC80MjAxNjg3NzItNmRjZmQwZDItOTE0Mi00NWQ5LWI3NGUtZDEwYWE3NTA3M2M2Lm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAzMDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMzA3VDAzMjIzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjFkNjlmYWNjMmEzOTliM2Y3M2VlYjgyNDRlZDJmOWE3NWZhZjE1MzhiZWY4YmQ3NjdkNTYwYTU5ZDA2MzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.UuHQCgWYkh0OQq9qsUWqGsUbhG3i9jcZDAMeHjLt5T4" controls="controls" muted="muted" class="d-block rounded-bottom-2 border-top width-fit" style="max-height:640px; min-height: 200px"></video>
+**OpenManus** is an open-source AI agent framework that enables you to build powerful autonomous agents capable of executing complex tasks. Unlike proprietary solutions that require invite codes, OpenManus empowers developers to create and deploy their own AI agents freely.
+
+Built by the team behind [MetaGPT](https://github.com/geekan/MetaGPT), OpenManus was prototyped in just 3 hours and continues to evolve rapidly with community contributions.
+
+> 🚀 **New!** Check out [OpenManus-RL](https://github.com/OpenManus/OpenManus-RL) — our sister project focused on reinforcement learning-based tuning methods (like GRPO) for LLM agents, developed in collaboration with UIUC researchers.
+
+---
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 **Multi-Agent Support** | Run single or multiple specialized agents collaboratively |
+| 🌐 **Browser Automation** | Web browsing, scraping, and interaction via Playwright |
+| 🔧 **Extensible Tools** | File operations, Python execution, web search, and more |
+| 📊 **Data Analysis** | Built-in data analysis and visualization capabilities |
+| 🔌 **MCP Integration** | Model Context Protocol support for enhanced tool usage |
+| 🏖️ **Sandbox Mode** | Secure containerized execution environment |
+| 🎯 **Multi-LLM Support** | OpenAI, Anthropic, Azure, Ollama, AWS Bedrock, and more |
+
+---
+
+## Demo
+
+<p align="center">
+  <a href="https://huggingface.co/spaces/lyh-917/OpenManusDemo">
+    <img src="https://img.shields.io/badge/Try%20Live%20Demo-Hugging%20Face-yellow?style=for-the-badge" alt="Try Demo">
+  </a>
+</p>
+
+---
+
+## Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| Python | 3.12+ |
+| Git | Latest |
+| API Key | OpenAI, Anthropic, or compatible provider |
+
+---
 
 ## Installation
 
-We provide two installation methods. Method 2 (using uv) is recommended for faster installation and better dependency management.
+Choose one of the two installation methods below:
 
-### Method 1: Using conda
+### Method 1: Using uv (Recommended)
 
-1. Create a new conda environment:
-
-```bash
-conda create -n open_manus python=3.12
-conda activate open_manus
-```
-
-2. Clone the repository:
+[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver.
 
 ```bash
-git clone https://github.com/FoundationAgents/OpenManus.git
-cd OpenManus
-```
-
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-### Method 2: Using uv (Recommended)
-
-1. Install uv (A fast Python package installer and resolver):
-
-```bash
+# 1. Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
-2. Clone the repository:
-
-```bash
+# 2. Clone the repository
 git clone https://github.com/FoundationAgents/OpenManus.git
 cd OpenManus
-```
 
-3. Create a new virtual environment and activate it:
-
-```bash
+# 3. Create and activate virtual environment
 uv venv --python 3.12
-source .venv/bin/activate  # On Unix/macOS
-# Or on Windows:
-# .venv\Scripts\activate
-```
+source .venv/bin/activate  # Unix/macOS
+# .venv\Scripts\activate   # Windows
 
-4. Install dependencies:
-
-```bash
+# 4. Install dependencies
 uv pip install -r requirements.txt
 ```
 
-### Browser Automation Tool (Optional)
+### Method 2: Using conda
+
+```bash
+# 1. Create conda environment
+conda create -n open_manus python=3.12
+conda activate open_manus
+
+# 2. Clone the repository
+git clone https://github.com/FoundationAgents/OpenManus.git
+cd OpenManus
+
+# 3. Install dependencies
+pip install -r requirements.txt
+```
+
+### Optional: Browser Automation
+
+If you plan to use browser automation features:
+
 ```bash
 playwright install
 ```
 
+---
+
 ## Configuration
 
-OpenManus requires configuration for the LLM APIs it uses. Follow these steps to set up your configuration:
-
-1. Create a `config.toml` file in the `config` directory (you can copy from the example):
+### 1. Create Configuration File
 
 ```bash
 cp config/config.example.toml config/config.toml
 ```
 
-2. Edit `config/config.toml` to add your API keys and customize settings:
+### 2. Configure Your LLM Provider
+
+Edit `config/config.toml` with your preferred provider:
+
+<details>
+<summary><b>OpenAI</b></summary>
 
 ```toml
-# Global LLM configuration
 [llm]
 model = "gpt-4o"
 base_url = "https://api.openai.com/v1"
-api_key = "sk-..."  # Replace with your actual API key
+api_key = "sk-..."
 max_tokens = 4096
 temperature = 0.0
+```
+</details>
 
-# Optional configuration for specific LLM models
+<details>
+<summary><b>Anthropic Claude</b></summary>
+
+```toml
+[llm]
+model = "claude-3-7-sonnet-20250219"
+base_url = "https://api.anthropic.com/v1/"
+api_key = "sk-ant-..."
+max_tokens = 8192
+temperature = 0.0
+```
+</details>
+
+<details>
+<summary><b>Azure OpenAI</b></summary>
+
+```toml
+[llm]
+api_type = "azure"
+model = "gpt-4o-mini"
+base_url = "https://YOUR_ENDPOINT.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT"
+api_key = "your-azure-api-key"
+max_tokens = 8096
+temperature = 0.0
+api_version = "2024-08-01-preview"
+```
+</details>
+
+<details>
+<summary><b>Ollama (Local)</b></summary>
+
+```toml
+[llm]
+api_type = "ollama"
+model = "llama3.2"
+base_url = "http://localhost:11434/v1"
+api_key = "ollama"
+max_tokens = 4096
+temperature = 0.0
+```
+</details>
+
+<details>
+<summary><b>AWS Bedrock</b></summary>
+
+```toml
+[llm]
+api_type = "aws"
+model = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+base_url = "bedrock-runtime.us-west-2.amazonaws.com"
+api_key = "placeholder"
+max_tokens = 8192
+temperature = 1.0
+```
+</details>
+
+### 3. Optional: Vision Model
+
+```toml
 [llm.vision]
 model = "gpt-4o"
 base_url = "https://api.openai.com/v1"
-api_key = "sk-..."  # Replace with your actual API key
+api_key = "sk-..."
+max_tokens = 4096
+temperature = 0.0
 ```
+
+### 4. Optional: Browser Settings
+
+```toml
+[browser]
+headless = false  # Set to true to hide browser window
+# chrome_instance_path = "/path/to/chrome"  # Use existing Chrome
+```
+
+---
 
 ## Quick Start
 
-One line for run OpenManus:
+### Basic Usage
 
 ```bash
 python main.py
 ```
 
-Then input your idea via terminal!
+Then enter your prompt in the terminal:
 
-For MCP tool version, you can run:
+```
+Enter your prompt: Search for the latest AI news and summarize the top 3 articles
+```
+
+### Example Prompts
+
+| Task | Prompt |
+|------|--------|
+| **Web Research** | "Find and compare the pricing of the top 3 cloud providers" |
+| **Code Generation** | "Create a Python script that scrapes weather data" |
+| **Data Analysis** | "Analyze this CSV file and create visualizations" |
+| **Automation** | "Log into my dashboard and export the monthly report" |
+
+---
+
+## Advanced Usage
+
+### MCP Tool Version
+
+For enhanced tool capabilities via Model Context Protocol:
+
 ```bash
 python run_mcp.py
 ```
 
-For unstable multi-agent version, you also can run:
+### Multi-Agent Flow
+
+For complex tasks requiring multiple specialized agents:
 
 ```bash
 python run_flow.py
 ```
 
-### Custom Adding Multiple Agents
+### Data Analysis Agent
 
-Currently, besides the general OpenManus Agent, we have also integrated the DataAnalysis Agent, which is suitable for data analysis and data visualization tasks. You can add this agent to `run_flow` in `config.toml`.
+Enable the data analysis agent in `config/config.toml`:
 
 ```toml
-# Optional configuration for run-flow
 [runflow]
-use_data_analysis_agent = true     # Disabled by default, change to true to activate
+use_data_analysis_agent = true
 ```
-In addition, you need to install the relevant dependencies to ensure the agent runs properly: [Detailed Installation Guide](app/tool/chart_visualization/README.md##Installation)
 
-## How to contribute
+> 📖 See [Data Analysis Setup Guide](app/tool/chart_visualization/README.md#Installation) for additional dependencies.
 
-We welcome any friendly suggestions and helpful contributions! Just create issues or submit pull requests.
+### Sandbox Mode
 
-Or contact @mannaandpoem via 📧email: mannaandpoem@gmail.com
+Run agents in a secure containerized environment:
 
-**Note**: Before submitting a pull request, please use the pre-commit tool to check your changes. Run `pre-commit run --all-files` to execute the checks.
+```toml
+[sandbox]
+use_sandbox = true
+image = "python:3.12-slim"
+work_dir = "/workspace"
+memory_limit = "1g"
+cpu_limit = 2.0
+timeout = 300
+network_enabled = true
+```
 
-## Community Group
-Join our networking group on Feishu and share your experience with other developers!
+---
 
-<div align="center" style="display: flex; gap: 20px;">
-    <img src="assets/community_group.jpg" alt="OpenManus 交流群" width="300" />
+## Architecture
+
+```
+OpenManus/
+├── app/
+│   ├── agent/          # Agent implementations (Manus, SWE, Data Analysis)
+│   ├── flow/           # Multi-agent orchestration
+│   ├── prompt/         # System prompts
+│   ├── tool/           # Tool implementations
+│   │   ├── search/     # Search engines (Google, Bing, DuckDuckGo)
+│   │   ├── sandbox/    # Sandboxed execution tools
+│   │   └── chart_visualization/  # Data visualization
+│   ├── sandbox/        # Container sandbox management
+│   └── mcp_server/     # MCP server implementation
+├── config/             # Configuration files
+├── main.py             # Single agent entry point
+├── run_flow.py         # Multi-agent entry point
+└── run_mcp.py          # MCP-enabled entry point
+```
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><b>API Key errors</b></summary>
+
+Ensure your API key is correctly set in `config/config.toml` and matches your provider's format:
+- OpenAI: `sk-...`
+- Anthropic: `sk-ant-...`
+</details>
+
+<details>
+<summary><b>Browser automation not working</b></summary>
+
+```bash
+# Reinstall Playwright browsers
+playwright install --force
+
+# For headed mode issues, try:
+playwright install chromium
+```
+</details>
+
+<details>
+<summary><b>Import errors</b></summary>
+
+```bash
+# Ensure you're in the virtual environment
+source .venv/bin/activate
+
+# Reinstall dependencies
+uv pip install -r requirements.txt --force-reinstall
+```
+</details>
+
+<details>
+<summary><b>Rate limiting</b></summary>
+
+Configure search fallback in `config/config.toml`:
+
+```toml
+[search]
+engine = "Google"
+fallback_engines = ["DuckDuckGo", "Bing"]
+retry_delay = 60
+max_retries = 3
+```
+</details>
+
+---
+
+## Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Run pre-commit checks: `pre-commit run --all-files`
+5. Commit your changes: `git commit -m 'Add amazing feature'`
+6. Push to the branch: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+📧 Questions? Contact [@mannaandpoem](https://github.com/mannaandpoem) at mannaandpoem@gmail.com
+
+---
+
+## Community
+
+<div align="center">
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/DYn29wFk9z)
+
 </div>
 
-## Star History
+Join our Feishu networking group to share experiences with other developers:
 
-[![Star History Chart](https://api.star-history.com/svg?repos=FoundationAgents/OpenManus&type=Date)](https://star-history.com/#FoundationAgents/OpenManus&Date)
+<div align="center">
+  <img src="assets/community_group.jpg" alt="OpenManus Community" width="300" />
+</div>
+
+---
 
 ## Sponsors
-Thanks to [PPIO](https://ppinfra.com/user/register?invited_by=OCPKCN&utm_source=github_openmanus&utm_medium=github_readme&utm_campaign=link) for computing source support.
-> PPIO: The most affordable and easily-integrated MaaS and GPU cloud solution.
 
+<a href="https://ppinfra.com/user/register?invited_by=OCPKCN&utm_source=github_openmanus&utm_medium=github_readme&utm_campaign=link">
+  <img src="https://img.shields.io/badge/PPIO-Computing%20Sponsor-blue?style=for-the-badge" alt="PPIO">
+</a>
 
-## Acknowledgement
+> **PPIO** — The most affordable and easily-integrated MaaS and GPU cloud solution.
 
-Thanks to [anthropic-computer-use](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo), [browser-use](https://github.com/browser-use/browser-use) and [crawl4ai](https://github.com/unclecode/crawl4ai) for providing basic support for this project!
+---
 
-Additionally, we are grateful to [AAAJ](https://github.com/metauto-ai/agent-as-a-judge), [MetaGPT](https://github.com/geekan/MetaGPT), [OpenHands](https://github.com/All-Hands-AI/OpenHands) and [SWE-agent](https://github.com/SWE-agent/SWE-agent).
+## Acknowledgements
 
-We also thank stepfun(阶跃星辰) for supporting our Hugging Face demo space.
+OpenManus builds upon the work of many excellent open-source projects:
 
-OpenManus is built by contributors from MetaGPT. Huge thanks to this agent community!
+**Core Dependencies:**
+- [anthropic-computer-use](https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo)
+- [browser-use](https://github.com/browser-use/browser-use)
+- [crawl4ai](https://github.com/unclecode/crawl4ai)
 
-## Cite
+**Inspiration & Related Projects:**
+- [MetaGPT](https://github.com/geekan/MetaGPT)
+- [OpenHands](https://github.com/All-Hands-AI/OpenHands)
+- [SWE-agent](https://github.com/SWE-agent/SWE-agent)
+- [AAAJ](https://github.com/metauto-ai/agent-as-a-judge)
+
+Special thanks to **stepfun (阶跃星辰)** for supporting our Hugging Face demo space.
+
+---
+
+## Citation
+
+If you use OpenManus in your research, please cite:
+
 ```bibtex
 @misc{openmanus2025,
   author = {Xinbin Liang and Jinyu Xiang and Zhaoyang Yu and Jiayi Zhang and Sirui Hong and Sheng Fan and Xiao Tang and Bang Liu and Yuyu Luo and Chenglin Wu},
@@ -193,3 +461,21 @@ OpenManus is built by contributors from MetaGPT. Huge thanks to this agent commu
   url = {https://doi.org/10.5281/zenodo.15186407},
 }
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<p align="center">
+  <b>Built with ❤️ by the MetaGPT community</b>
+</p>
+
+<p align="center">
+  <a href="#openmanus">Back to top ↑</a>
+</p>
+
+[![Star History Chart](https://api.star-history.com/svg?repos=FoundationAgents/OpenManus&type=Date)](https://star-history.com/#FoundationAgents/OpenManus&Date)
