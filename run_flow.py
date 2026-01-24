@@ -43,6 +43,8 @@ from app.agent.swe import SWEAgent
 from app.config import config
 from app.flow.flow_factory import FlowFactory, FlowType
 from app.logger import logger
+from app.skills.skill_manager import SkillManager
+from app.skills.skill import Skill
 
 
 class ExecutionMode(str, Enum):
@@ -134,12 +136,47 @@ Examples:
         help="Disable DataAnalysis agent in flow mode (overrides config)"
     )
 
+    # Skill options
+    skill_group = parser.add_argument_group("Skill Options")
+    skill_group.add_argument(
+        "--skill", "-s",
+        type=str,
+        help="Apply a specific skill to the agent(s)"
+    )
+    skill_group.add_argument(
+        "--list-skills",
+        action="store_true",
+        help="List all available skills and exit"
+    )
+
     return parser.parse_args()
 
 
-async def run_simple_mode(args: argparse.Namespace) -> None:
+def load_skill_from_args(args: argparse.Namespace) -> Optional[Skill]:
+    """Load and validate skill from command line arguments.
+    
+    Args:
+        args: Parsed command line arguments
+        
+    Returns:
+        Skill object if skill specified and valid, None otherwise
+    """
+    if not args.skill:
+        return None
+    
+    manager = SkillManager()
+    manager.discover_skills()
+    
+    skill = manager.load_skill(args.skill)
+    if skill is None:
+        print(f"Error: Skill '{args.skill}' not found. Use --list-skills to see available skills.")
+        sys.exit(1)
+    
+    return skill
+
+
+async def run_simple_mode(args: argparse.Namespace, skill: Optional[Skill] = None) -> None:
     """Run in simple single-agent mode."""
-    # Create the appropriate agent
     if args.agent == AgentType.MANUS.value:
         agent = await Manus.create()
         logger.info("Using Manus agent for general purpose tasks")
@@ -151,6 +188,9 @@ async def run_simple_mode(args: argparse.Namespace) -> None:
         logger.info("Using DataAnalysis agent for data analysis tasks")
     else:
         raise ValueError(f"Unknown agent type: {args.agent}")
+
+    if skill:
+        await agent.apply_skill(skill)
 
     try:
         if args.interactive:
@@ -171,16 +211,18 @@ async def run_simple_mode(args: argparse.Namespace) -> None:
             await agent.cleanup()
 
 
-async def run_flow_mode(args: argparse.Namespace) -> None:
+async def run_flow_mode(args: argparse.Namespace, skill: Optional[Skill] = None) -> None:
     """Run in multi-agent planning flow mode."""
-    # Build agents dictionary
     agents = {"manus": await Manus.create()}
 
-    # Add DataAnalysis agent if enabled
     use_data_analysis = config.run_flow_config.use_data_analysis_agent and not args.no_data_analysis
     if use_data_analysis:
         agents["data_analysis"] = DataAnalysis()
         logger.info("DataAnalysis agent enabled")
+
+    if skill:
+        for agent_instance in agents.values():
+            await agent_instance.apply_skill(skill)
 
     try:
         if args.interactive:
@@ -240,13 +282,12 @@ async def run_interactive_flow_loop(agents: dict, timeout: int) -> None:
     print("\nGoodbye!")
 
 
-async def run_mcp_mode(args: argparse.Namespace) -> None:
+async def run_mcp_mode(args: argparse.Namespace, skill: Optional[Skill] = None) -> None:
     """Run in MCP-enabled agent mode."""
     agent = MCPAgent()
     server_reference = config.mcp_config.server_reference
 
     try:
-        # Initialize MCP connection
         logger.info(f"Initializing MCPAgent with {args.connection} connection...")
 
         if args.connection == "stdio":
@@ -255,7 +296,7 @@ async def run_mcp_mode(args: argparse.Namespace) -> None:
                 command=sys.executable,
                 args=["-m", server_reference],
             )
-        else:  # sse
+        else:
             await agent.initialize(
                 connection_type="sse",
                 server_url=args.server_url
@@ -263,7 +304,9 @@ async def run_mcp_mode(args: argparse.Namespace) -> None:
 
         logger.info(f"Connected to MCP server via {args.connection}")
 
-        # Execute based on mode
+        if skill:
+            await agent.apply_skill(skill)
+
         if args.prompt:
             await agent.run(args.prompt)
         elif args.interactive:
@@ -314,13 +357,28 @@ async def main() -> None:
     """Main entry point."""
     args = parse_args()
 
+    if args.list_skills:
+        manager = SkillManager()
+        manager.discover_skills()
+        skills_dict = manager.list_skills()
+        
+        if not skills_dict:
+            print("No skills found in skills/ directory")
+        else:
+            print("Available skills:")
+            for name, description in skills_dict.items():
+                print(f"  {name}: {description}")
+        sys.exit(0)
+
+    skill = load_skill_from_args(args)
+
     try:
         if args.mode == ExecutionMode.SIMPLE.value:
-            await run_simple_mode(args)
+            await run_simple_mode(args, skill)
         elif args.mode == ExecutionMode.FLOW.value:
-            await run_flow_mode(args)
+            await run_flow_mode(args, skill)
         elif args.mode == ExecutionMode.MCP.value:
-            await run_mcp_mode(args)
+            await run_mcp_mode(args, skill)
         else:
             raise ValueError(f"Unknown mode: {args.mode}")
 
