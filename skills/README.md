@@ -22,9 +22,7 @@ allowed-tools: Read, Grep, Glob
 
 Instructions for the agent...
 
-## Examples
 
-Show concrete examples of using this skill.
 ```
 
 ## Skill Metadata Fields
@@ -35,7 +33,3 @@ Show concrete examples of using this skill.
 - **model**: Model to use when skill is active (optional)
 - **context**: Set to "fork" to run in isolated context (optional)
 - **user-invocable**: Whether skill can be invoked manually (default: true)
-
-## Examples
-
-Check the `examples/` directory for sample skills.

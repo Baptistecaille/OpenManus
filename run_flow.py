@@ -45,6 +45,8 @@ from app.flow.flow_factory import FlowFactory, FlowType
 from app.logger import logger
 from app.skills.skill_manager import SkillManager
 from app.skills.skill import Skill
+from app.tool import ToolCollection
+from app.tool.loader import load_all_tools
 
 
 class ExecutionMode(str, Enum):
@@ -177,8 +179,11 @@ def load_skill_from_args(args: argparse.Namespace) -> Optional[Skill]:
 
 async def run_simple_mode(args: argparse.Namespace, skill: Optional[Skill] = None) -> None:
     """Run in simple single-agent mode."""
+    # Load all available tools automatically
+    all_tools = load_all_tools()
+    
     if args.agent == AgentType.MANUS.value:
-        agent = await Manus.create()
+        agent = await Manus.create(available_tools=ToolCollection(*all_tools))
         logger.info("Using Manus agent for general purpose tasks")
     elif args.agent == AgentType.SWE.value:
         agent = SWEAgent()
@@ -213,7 +218,10 @@ async def run_simple_mode(args: argparse.Namespace, skill: Optional[Skill] = Non
 
 async def run_flow_mode(args: argparse.Namespace, skill: Optional[Skill] = None) -> None:
     """Run in multi-agent planning flow mode."""
-    agents = {"manus": await Manus.create()}
+    # Load all available tools automatically
+    all_tools = load_all_tools()
+    
+    agents = {"manus": await Manus.create(available_tools=ToolCollection(*all_tools))}
 
     use_data_analysis = config.run_flow_config.use_data_analysis_agent and not args.no_data_analysis
     if use_data_analysis:

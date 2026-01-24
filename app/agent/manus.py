@@ -14,13 +14,16 @@ from app.tool.human_in_the_loop import HumanInTheLoop
 from app.tool.mcp import MCPClients, MCPClientTool
 from app.tool.python_execute import PythonExecute
 from app.tool.str_replace_editor import StrReplaceEditor
+from app.tool.bash import Bash
 
 
 class Manus(ToolCallAgent):
     """A versatile general-purpose agent with support for both local and MCP tools."""
 
     name: str = "Manus"
-    description: str = "A versatile agent that can solve various tasks using multiple tools including MCP-based tools"
+    description: str = (
+        "A versatile agent that can solve various tasks using multiple tools including MCP-based tools"
+    )
 
     system_prompt: str = SYSTEM_PROMPT.format(directory=config.workspace_root)
     next_step_prompt: str = NEXT_STEP_PROMPT
@@ -35,16 +38,14 @@ class Manus(ToolCallAgent):
     available_tools: ToolCollection = Field(
         default_factory=lambda: ToolCollection(
             PythonExecute(),
-
+            Bash(),
             StrReplaceEditor(),
-
             HumanInTheLoop(),
             Terminate(),
         )
     )
 
     special_tool_names: list[str] = Field(default_factory=lambda: [Terminate().name])
-
 
     # Track connected MCP servers
     connected_servers: Dict[str, str] = Field(
@@ -74,7 +75,9 @@ class Manus(ToolCallAgent):
             try:
                 # Check if already connected (when reusing mcp_clients)
                 if server_id in self.mcp_clients.sessions:
-                    logger.info(f"Reusing existing connection to MCP server {server_id}")
+                    logger.info(
+                        f"Reusing existing connection to MCP server {server_id}"
+                    )
                     new_tools = [
                         tool
                         for tool in self.mcp_clients.tools
