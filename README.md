@@ -327,12 +327,16 @@ OpenManus/
 │   │   ├── sandbox/    # Sandboxed execution tools
 │   │   └── chart_visualization/  # Data visualization
 │   ├── sandbox/        # Container sandbox management
+│   ├── skills/         # Skills system
 │   └── mcp_server/     # MCP server implementation
 ├── config/             # Configuration files
+├── skills/             # User-defined skills
 ├── main.py             # Single agent entry point
 ├── run_flow.py         # Multi-agent entry point
 └── run_mcp.py          # MCP-enabled entry point
 ```
+
+> 📖 For detailed documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 
