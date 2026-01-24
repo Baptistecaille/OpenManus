@@ -59,6 +59,7 @@ MULTIMODAL_MODELS = [
 
 from pydantic import BaseModel, Field, PrivateAttr
 
+
 class TokenCounter:
     # Token constants
     BASE_MESSAGE_TOKENS = 4
@@ -190,7 +191,7 @@ class TokenCounter:
 
 class LLM(BaseModel):
     _instances: Dict[str, "LLM"] = {}
-    
+
     # Define Pydantic fields
     model: str = "default-model"
     max_tokens: int = 4096
@@ -200,7 +201,7 @@ class LLM(BaseModel):
     api_version: Optional[str] = None
     base_url: Optional[str] = None
     max_input_tokens: Optional[int] = None
-    
+
     # Private fields for internal state
     _client: Any = PrivateAttr(default=None)
     _tokenizer: Any = PrivateAttr(default=None)
@@ -212,17 +213,20 @@ class LLM(BaseModel):
         arbitrary_types_allowed = True
 
     def __init__(
-        self, config_name: str = "default", llm_config: Optional[LLMSettings] = None, **data
+        self,
+        config_name: str = "default",
+        llm_config: Optional[LLMSettings] = None,
+        **data,
     ):
         super().__init__(**data)
-        if not hasattr(self, "client") and not self._client:
+        if self._client is None:
             llm_config = llm_config or config.llm
             if isinstance(llm_config, dict):
-               llm_config = llm_config.get(config_name, llm_config.get("default"))
+                llm_config = llm_config.get(config_name, llm_config.get("default"))
             elif hasattr(llm_config, "get"):
-               # Handle if it is not a dict but behaves like one
-               llm_config = llm_config.get(config_name)
-            
+                # Handle if it is not a dict but behaves like one
+                llm_config = llm_config.get(config_name)
+
             # If we have a dict config, populate fields
             if isinstance(llm_config, dict):
                 self.model = llm_config.get("model", self.model)
@@ -232,7 +236,9 @@ class LLM(BaseModel):
                 self.api_key = llm_config.get("api_key", self.api_key)
                 self.api_version = llm_config.get("api_version", self.api_version)
                 self.base_url = llm_config.get("base_url", self.base_url)
-                self.max_input_tokens = llm_config.get("max_input_tokens", self.max_input_tokens)
+                self.max_input_tokens = llm_config.get(
+                    "max_input_tokens", self.max_input_tokens
+                )
             # If it's an object (pydantic model), populate fields
             elif hasattr(llm_config, "model"):
                 self.model = llm_config.model
@@ -262,16 +268,25 @@ class LLM(BaseModel):
                 elif self.api_type == "aws":
                     self._client = BedrockClient()
                 else:
-                    self._client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+                    self._client = AsyncOpenAI(
+                        api_key=self.api_key, base_url=self.base_url
+                    )
 
                 # Test client validity (simple ping without API call)
-                if not self.api_key or self.api_key in ["sk-...", "dummy-key-for-testing", "..."]:
-                    logger.warning("API key appears to be placeholder/dummy - LLM will not function")
+                if not self.api_key or self.api_key in [
+                    "sk-...",
+                    "dummy-key-for-testing",
+                    "...",
+                ]:
+                    logger.warning(
+                        "API key appears to be placeholder/dummy - LLM will not function"
+                    )
                     self._client = None
-
             except Exception as e:
                 logger.error(f"Failed to initialize LLM client: {e}")
-                logger.warning("LLM client initialization failed - server will run in mock mode")
+                logger.warning(
+                    "LLM client initialization failed - server will run in mock mode"
+                )
                 self._client = None
 
             self._token_counter = TokenCounter(self._tokenizer)
@@ -283,15 +298,15 @@ class LLM(BaseModel):
     @property
     def tokenizer(self):
         return self._tokenizer
-        
+
     @property
     def token_counter(self):
         return self._token_counter
-    
+
     @property
     def total_input_tokens(self):
         return self._total_input_tokens
-        
+
     @total_input_tokens.setter
     def total_input_tokens(self, value):
         self._total_input_tokens = value
@@ -466,7 +481,9 @@ class LLM(BaseModel):
         """
         try:
             if self.client is None:
-                logger.warning("LLM client not available - returning mock response for testing")
+                logger.warning(
+                    "LLM client not available - returning mock response for testing"
+                )
                 return None  # Return None to indicate mock mode
 
             # Check if the model supports images
@@ -757,9 +774,11 @@ class LLM(BaseModel):
         """
         try:
             if self.client is None:
-                logger.warning("LLM client not available - returning mock response for testing")
+                logger.warning(
+                    "LLM client not available - returning mock response for testing"
+                )
                 return None  # Return None to indicate mock mode
-            
+
             # Validate tool_choice
             if tool_choice not in TOOL_CHOICE_VALUES:
                 raise ValueError(f"Invalid tool_choice: {tool_choice}")

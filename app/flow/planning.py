@@ -176,7 +176,7 @@ class PlanningFlow(BaseFlow):
         )
 
         # Process tool calls if present
-        if response.tool_calls:
+        if response and response.tool_calls:
             for tool_call in response.tool_calls:
                 if tool_call.function.name == "planning":
                     # Parse the arguments

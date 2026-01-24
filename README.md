@@ -248,7 +248,7 @@ headless = false  # Set to true to hide browser window
 ### Basic Usage
 
 ```bash
-python main.py
+python run_flow.py
 ```
 
 Then enter your prompt in the terminal:
@@ -268,23 +268,68 @@ Enter your prompt: Search for the latest AI news and summarize the top 3 article
 
 ---
 
-## Advanced Usage
+## Execution Modes
 
-### MCP Tool Version
+OpenManus provides three execution modes via the unified `run_flow.py` entry point:
 
-For enhanced tool capabilities via Model Context Protocol:
+### Flow Mode (Default)
 
-```bash
-python run_mcp.py
-```
-
-### Multi-Agent Flow
-
-For complex tasks requiring multiple specialized agents:
+Multi-agent orchestration with automatic planning:
 
 ```bash
 python run_flow.py
+python run_flow.py --prompt "Your complex task here"
 ```
+
+### Simple Mode
+
+Single agent for straightforward tasks:
+
+```bash
+python run_flow.py --mode simple
+python run_flow.py --mode simple --agent manus
+python run_flow.py --mode simple --agent swe
+python run_flow.py --mode simple --agent data_analysis
+```
+
+### MCP Mode
+
+Connect to MCP servers for extended tool capabilities:
+
+```bash
+# Using stdio connection (default)
+python run_flow.py --mode mcp
+
+# Using SSE connection
+python run_flow.py --mode mcp --connection sse --server-url http://localhost:8000/sse
+```
+
+### Interactive Mode
+
+Run any mode in an interactive loop:
+
+```bash
+python run_flow.py --interactive
+python run_flow.py --mode simple --interactive
+python run_flow.py --mode mcp --interactive
+```
+
+### Command Line Reference
+
+| Option | Description |
+|--------|-------------|
+| `--mode`, `-m` | Execution mode: `flow` (default), `simple`, `mcp` |
+| `--agent`, `-a` | Agent for simple mode: `manus`, `swe`, `data_analysis` |
+| `--prompt`, `-p` | Execute single prompt and exit |
+| `--interactive`, `-i` | Run in interactive loop mode |
+| `--connection`, `-c` | MCP connection: `stdio` (default), `sse` |
+| `--server-url` | MCP SSE server URL |
+| `--timeout` | Flow timeout in seconds (default: 3600) |
+| `--no-data-analysis` | Disable DataAnalysis agent in flow mode |
+
+---
+
+## Advanced Configuration
 
 ### Data Analysis Agent
 
@@ -312,6 +357,18 @@ timeout = 300
 network_enabled = true
 ```
 
+### MCP Server Configuration
+
+Configure MCP servers in `config/config.toml`:
+
+```toml
+[mcp.servers.myserver]
+type = "stdio"  # or "sse"
+command = "python"
+args = ["-m", "my_mcp_server"]
+# url = "http://localhost:8000/sse"  # for SSE type
+```
+
 ---
 
 ## Architecture
@@ -331,9 +388,7 @@ OpenManus/
 │   └── mcp_server/     # MCP server implementation
 ├── config/             # Configuration files
 ├── skills/             # User-defined skills
-├── main.py             # Single agent entry point
-├── run_flow.py         # Multi-agent entry point
-└── run_mcp.py          # MCP-enabled entry point
+└── run_flow.py         # Unified entry point (all modes)
 ```
 
 > 📖 For detailed documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)

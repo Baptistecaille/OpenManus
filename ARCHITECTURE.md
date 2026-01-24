@@ -146,6 +146,91 @@ OpenManus/
 ├── mcp-servers/                  # External MCP servers
 │   └── Office-Word-MCP-Server/  # Word document MCP server
 │
+├── run_flow.py                   # Unified entry point (all modes)
+└── requirements.txt              # Python dependencies
+```
+OpenManus/
+├── app/                          # Main application code
+│   ├── agent/                    # Agent implementations
+│   │   ├── base.py              # BaseAgent - abstract base class
+│   │   ├── toolcall.py          # ToolCallAgent - base for tool-using agents
+│   │   ├── manus.py             # Manus - main general-purpose agent
+│   │   ├── swe.py               # SWEAgent - software engineering agent
+│   │   ├── data_analysis.py     # DataAnalysis - data analysis agent
+│   │   ├── mcp.py               # MCPAgent - MCP-enabled agent
+│   │   └── react.py             # ReActAgent - ReAct paradigm agent
+│   │
+│   ├── tool/                     # Tool implementations
+│   │   ├── base.py              # BaseTool - abstract base class
+│   │   ├── tool_collection.py   # ToolCollection - manages multiple tools
+│   │   ├── python_execute.py    # Execute Python code
+│   │   ├── str_replace_editor.py# File editing tool
+│   │   ├── bash.py              # Bash command execution
+│   │   ├── webfetch.py          # Web fetching tool
+│   │   ├── planning.py          # Planning/task management tool
+│   │   ├── terminate.py         # Terminates agent execution
+│   │   ├── mcp.py               # MCP client tools
+│   │   ├── human_in_the_loop.py # Human interaction tool
+│   │   ├── search/              # Search engines
+│   │   │   ├── base.py          # BaseSearch
+│   │   │   ├── google_search.py # Google search
+│   │   │   ├── duckduckgo_search.py
+│   │   │   └── baidu_search.py
+│   │   ├── sandbox/             # Sandbox-specific tools
+│   │   │   ├── sb_shell_tool.py # Sandboxed shell
+│   │   │   ├── sb_files_tool.py # Sandboxed file operations
+│   │   │   └── sb_browser_tool.py
+│   │   └── chart_visualization/ # Data visualization tools
+│   │       ├── data_visualization.py
+│   │       ├── chart_prepare.py
+│   │       └── python_execute.py
+│   │
+│   ├── flow/                     # Multi-agent orchestration
+│   │   ├── base.py              # BaseFlow - abstract base class
+│   │   ├── planning.py          # PlanningFlow - plan-based execution
+│   │   └── flow_factory.py      # Flow creation factory
+│   │
+│   ├── prompt/                   # System prompts
+│   │   ├── manus.py             # Manus agent prompts
+│   │   ├── swe.py               # SWE agent prompts
+│   │   ├── visualization.py     # Data visualization prompts
+│   │   ├── planning.py          # Planning prompts
+│   │   └── browser.py           # Browser interaction prompts
+│   │
+│   ├── sandbox/                  # Sandbox execution environment
+│   │   ├── client.py            # Sandbox client interface
+│   │   └── core/
+│   │       ├── sandbox.py       # DockerSandbox implementation
+│   │       ├── manager.py       # Sandbox manager
+│   │       └── terminal.py      # Terminal emulation
+│   │
+│   ├── skills/                   # Skills system
+│   │   ├── skill.py             # Skill data models
+│   │   ├── skill_manager.py     # Discovers and loads skills
+│   │   ├── skill_matcher.py     # LLM-based skill matching
+│   │   ├── skill_parser.py      # YAML/Markdown parsing
+│   │   └── hooks.py             # Skill lifecycle hooks
+│   │
+│   ├── mcp_server/               # MCP server implementation
+│   │   └── server.py            # MCP server for OpenManus
+│   │
+│   ├── config.py                 # Configuration management
+│   ├── llm.py                    # LLM client abstraction
+│   ├── schema.py                 # Data schemas and types
+│   ├── logger.py                 # Logging configuration
+│   └── exceptions.py             # Custom exceptions
+│
+├── config/                       # Configuration files
+│   ├── config.example.toml      # Example configuration
+│   └── config.toml              # User configuration (gitignored)
+│
+├── skills/                       # User-defined skills
+│   └── human-in-the-loop/       # Example skill
+│       └── SKILL.md
+│
+├── mcp-servers/                  # External MCP servers
+│   └── Office-Word-MCP-Server/  # Word document MCP server
+│
 ├── main.py                       # Single agent entry point
 ├── run_flow.py                   # Multi-agent entry point
 ├── run_mcp.py                    # MCP-enabled entry point
@@ -626,12 +711,45 @@ use_data_analysis_agent = true
 
 ## Entry Points
 
-| Entry Point | Description | Usage |
-|-------------|-------------|-------|
-| `main.py` | Single Manus agent | `python main.py` |
-| `run_flow.py` | Multi-agent with planning | `python run_flow.py` |
-| `run_mcp.py` | MCP-enabled agent | `python run_mcp.py` |
-| `app/server.py` | HTTP API server | `python -m app.server` |
+OpenManus uses a single unified entry point: `run_flow.py`
+
+### Execution Modes
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| **Flow** (default) | `python run_flow.py` | Multi-agent with PlanningFlow |
+| **Simple** | `python run_flow.py --mode simple` | Single agent execution |
+| **MCP** | `python run_flow.py --mode mcp` | MCP-enabled agent |
+
+### Command Line Options
+
+```bash
+# Basic usage
+python run_flow.py                                    # Interactive flow mode
+python run_flow.py --prompt "Your task"              # Single prompt execution
+
+# Mode selection
+python run_flow.py --mode simple                      # Single agent
+python run_flow.py --mode flow                        # Multi-agent (default)
+python run_flow.py --mode mcp                         # MCP-enabled
+
+# Agent selection (simple mode)
+python run_flow.py --mode simple --agent manus        # General purpose
+python run_flow.py --mode simple --agent swe          # Software engineering
+python run_flow.py --mode simple --agent data_analysis # Data analysis
+
+# Interactive mode
+python run_flow.py --interactive                      # Loop mode for any mode
+
+# MCP options
+python run_flow.py --mode mcp --connection stdio      # stdio connection
+python run_flow.py --mode mcp --connection sse        # SSE connection
+python run_flow.py --mode mcp --server-url http://... # Custom SSE URL
+
+# Flow options
+python run_flow.py --timeout 7200                     # Custom timeout
+python run_flow.py --no-data-analysis                 # Disable DataAnalysis agent
+```
 
 ---
 

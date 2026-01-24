@@ -1,53 +1,42 @@
 import sys
-import traceback
-from app.config import config
+import os
+import asyncio
+
+# Add current directory to path
+sys.path.append(os.getcwd())
+
 from app.llm import LLM
+from app.config import config
+import logging
+
+# Configure logging to see outputs
+logging.basicConfig(level=logging.INFO)
 
 
-def debug_config():
-    print("--- Debugging Config ---")
+async def test_llm():
+    print("Testing LLM initialization...")
+
+    # Print config details again
     try:
-        print(f"Config initialized: {config._initialized}")
-        print(f"LLM Config Keys: {config.llm.keys()}")
+        llm_config = config.llm["default"]
+        print(f"Config Model: {llm_config.model}")
+        print(f"Config API Type: {llm_config.api_type}")
+        print(f"Config Base URL: {llm_config.base_url}")
+    except Exception as e:
+        print(f"Error checking config: {e}")
 
-        default_config = config.llm.get("default")
-        if default_config:
-            print("Default LLM Config:")
-            print(f"  Model: {default_config.model}")
-            print(f"  Base URL: {default_config.base_url}")
-            print(f"  API Type: '{default_config.api_type}'")
-            print(f"  API Key Present: {bool(default_config.api_key)}")
-            print(
-                f"  API Key Length: {len(default_config.api_key) if default_config.api_key else 0}"
-            )
+    try:
+        llm = LLM()
+        print(f"LLM instance created.")
+        print(f"Client: {llm.client}")
+        if llm.client is None:
+            print("ERROR: LLM client is None!")
         else:
-            print("No 'default' LLM config found.")
-
-        print("\n--- Instantiating LLM ---")
-        try:
-            # Replicate agent initialization
-            print("Attempting: LLM(config_name='manus')")
-            llm_instance = LLM(config_name="manus")
-            print(f"LLM instantiated successfully.")
-            print(f"LLM Model: {llm_instance.model}")
-            print(f"LLM API Type: '{llm_instance.api_type}'")
-            print(f"LLM Base URL: {llm_instance.base_url}")
-
-            client = llm_instance.client
-            print(f"LLM Client type: {type(client)}")
-            print(f"LLM Client is None: {client is None}")
-
-            if client is None:
-                print("Checking _client private attr:", llm_instance._client)
-
-        except Exception as e:
-            print(f"Failed to instantiate LLM: {e}")
-            traceback.print_exc()
+            print("SUCCESS: LLM client initialized.")
 
     except Exception as e:
-        print(f"Error inspecting config: {e}")
-        traceback.print_exc()
+        print(f"LLM initialization raised exception: {e}")
 
 
 if __name__ == "__main__":
-    debug_config()
+    asyncio.run(test_llm())
